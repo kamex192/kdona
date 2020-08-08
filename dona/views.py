@@ -36,8 +36,6 @@ def check(request):
     options.add_argument('--headless')
     options.add_argument("--disable-blink-features=AutomationControlled")
     driver = webdriver.Chrome(options=options)
-    # driver.execute_script(
-    #     'const newProto = navigator.__proto__;delete newProto.webdriver;navigator.__proto__ = newProto;')
     driver.get('https://www.google.com')
     # time.sleep(1)
     element = driver.find_element(By.CSS_SELECTOR, '[name="q"]')
@@ -54,7 +52,7 @@ def check(request):
             element.send_keys(Keys.ENTER)
             break
 
-    time.sleep(20)
+    time.sleep(10)
 
     ret = '自動操縦フラグチェック：'
 
