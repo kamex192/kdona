@@ -18,6 +18,8 @@ import math
 
 class GetInfoThread(threading.Thread):
     def run(self):
+        print('active_count:' + str(threading.active_count()))
+        print('enumerate:' + str(threading.enumerate()))
         options = Options()
         options.add_argument('--headless')
         options.add_argument("--disable-blink-features=AutomationControlled")
@@ -34,10 +36,6 @@ class GetInfoThread(threading.Thread):
 def get_month_url(driver):
     print('get_month_url start')
     month_url_dict = {}
-    options = Options()
-    options.add_argument('--headless')
-    options.add_argument("--disable-blink-features=AutomationControlled")
-    driver = webdriver.Chrome(options=options)
     driver.get('https://www.google.com')
     element = driver.find_element(By.CSS_SELECTOR, '[name="q"]')
     element.send_keys("楽天ブックス")
@@ -60,10 +58,12 @@ def get_month_url(driver):
             actions.move_to_element(element).perform()
             break
 
+    time.sleep(3)
     print('新作')
     selector = 'a'
     elements = driver.find_elements_by_css_selector(selector)
     for element in elements:
+        print(element.text)
         if '新作' in element.text:
             actions = ActionChains(driver)
             actions.move_to_element(element).perform()
@@ -126,22 +126,22 @@ def get_items_info(driver, month_url):
 
     all_item = Item.objects.all()
     fetched_items_info_url_set = set()
-    print(len(all_item))
+    print('all_item:'+str(len(all_item)))
 
     for item in all_item:
         print(item.item_url)
         fetched_items_info_url_set.add(item.item_url)
 
-    print(len(items_info_url_set))
-    print(items_info_url_set)
-    print(len(fetched_items_info_url_set))
-    print(fetched_items_info_url_set)
+    print('items_info_url_set:'+str(len(items_info_url_set)))
+    # print(items_info_url_set)
+    print('fetched_items_info_url_set:'+str(len(fetched_items_info_url_set)))
+    # print(fetched_items_info_url_set)
 
     items_info_url_set = items_info_url_set.difference(
         fetched_items_info_url_set)
 
-    print(len(items_info_url_set))
-    print(items_info_url_set)
+    print('items_info_url_set:'+str(len(items_info_url_set)))
+    # print(items_info_url_set)
 
     for item_info_url in items_info_url_set:
         get_item_info(driver, item_info_url)
@@ -326,8 +326,11 @@ def index(request):
 
 def get_info(request):
     print('getinfo start')
-    t = GetInfoThread()
-    t.start()
+    print('active_count:' + str(threading.active_count()))
+    print('enumerate:' + str(threading.enumerate()))
+    if 'GetInfoThread' not in str(threading.enumerate()):
+        t = GetInfoThread()
+        t.start()
     print('getinfo end')
     return HttpResponse('info')
 
