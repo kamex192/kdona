@@ -1,5 +1,6 @@
 from django.http import HttpResponse
 from dona.models import Item
+from dona.models import Gei
 
 import chromedriver_binary
 
@@ -129,7 +130,7 @@ def get_items_info(driver, month_url):
     print('all_item:'+str(len(all_item)))
 
     for item in all_item:
-        print(item.item_url)
+        # print(item.item_url)
         fetched_items_info_url_set.add(item.item_url)
 
     print('items_info_url_set:'+str(len(items_info_url_set)))
@@ -315,6 +316,89 @@ def get_item_info(driver, item_info_url):
     return item_info_dict
 
 
+class GetGeiThread(threading.Thread):
+    def run(self):
+        print('active_count:' + str(threading.active_count()))
+        print('enumerate:' + str(threading.enumerate()))
+        options = Options()
+        options.add_argument('--headless')
+        options.add_argument("--disable-blink-features=AutomationControlled")
+        driver = webdriver.Chrome(options=options)
+
+        url = 'http://blog.livedoor.jp/sedori_nitijyo/'
+        get_gei_infos(driver, url)
+
+
+def get_gei_infos(driver, url):
+    print('get_gei_infos start')
+    print(url)
+
+    driver.get(url)
+
+    max_page = get_max_gei_page(driver)
+    print(max_page)
+
+    for page in range(int(max_page)):
+        url_page = url + '?p=' + str(page+1)
+        print(url_page)
+        get_gei_info(driver, url_page)
+
+    print('get_gei_infos end')
+    return 'get_gei_infos end'
+
+
+def get_max_gei_page(driver):
+    print('get_max_gei_page start')
+
+    max_page = 0
+
+    selector = 'li.paging-last a'
+    elements = driver.find_elements_by_css_selector(selector)
+    for element in elements:
+        url = element.get_attribute('href')
+        print(url)
+        pattern = '.*?p=(\d+)'
+        result = re.match(pattern, url)
+        if result is not None:
+            print(result)
+            max_page = result.group(1)
+            print(max_page)
+        break
+
+    print('get_max_gei_page end')
+    return max_page
+
+
+def get_gei_info(driver, url):
+    print('get_gei_info start')
+    print(url)
+
+    driver.get(url)
+    selector = 'div.article-outer'
+    elements = driver.find_elements_by_css_selector(selector)
+    for element in elements:
+        gei_info = Gei()
+        selector = 'abbr.updated'
+        post_date_element = element.find_element_by_css_selector(selector)
+        gei_info.post_date = post_date_element.text.replace(
+            '年', '-').replace('月', '-').replace('日', ' ')
+        print(post_date_element.text)
+        selector = 'div.article-title-outer'
+        item_name_element = element.find_element_by_css_selector(selector)
+        gei_info.item_name = item_name_element.text
+        print(item_name_element.text)
+        selector = 'h2 a'
+        item_url_element = element.find_element_by_css_selector(selector)
+        item_url = item_url_element.get_attribute('href')
+        gei_info.item_url = item_url
+        print(item_url)
+        try:
+            gei_info.save()
+            print('gei_info.save')
+        except Exception as e:
+            print(e)
+
+
 def index(request):
     content = r'hellow python, 123, end.'
     pattern = '.*lowp.*123.*'
@@ -333,6 +417,17 @@ def get_info(request):
         t.start()
     print('getinfo end')
     return HttpResponse('info')
+
+
+def get_gei(request):
+    print('get_gei start')
+    print('active_count:' + str(threading.active_count()))
+    print('enumerate:' + str(threading.enumerate()))
+    if 'GetGeiThread' not in str(threading.enumerate()):
+        t = GetGeiThread()
+        t.start()
+    print('get_gei end')
+    return HttpResponse('gei')
 
 
 def check(request):
