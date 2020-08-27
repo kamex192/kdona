@@ -27,6 +27,14 @@ class Err(models.Model):
     err_date = models.DateTimeField('date published')
 
 
+class Mono(models.Model):
+    item_name = models.TextField()
+    item_url = models.TextField(unique=True)
+    shop_name = models.TextField()
+    item_price = models.TextField()
+    jan_code = models.TextField()
+
+
 class Gei(models.Model):
     item_name = models.TextField()
     item_url = models.TextField(unique=True)

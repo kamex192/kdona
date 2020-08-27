@@ -1,6 +1,7 @@
 from django.http import HttpResponse
 from dona.models import Item
 from dona.models import Gei
+from dona.models import Mono
 
 import chromedriver_binary
 
@@ -15,6 +16,8 @@ import time
 
 import re
 import math
+
+import random
 
 
 class GetInfoThread(threading.Thread):
@@ -309,11 +312,112 @@ def get_item_info(driver, item_info_url):
 
     try:
         item_info.save()
+        time.sleep(3)
     except Exception as e:
         print(e)
 
     print('get_item_info end')
     return item_info_dict
+
+
+class GetMonoThread(threading.Thread):
+    def run(self):
+        print('active_count:' + str(threading.active_count()))
+        print('enumerate:' + str(threading.enumerate()))
+        options = Options()
+        options.add_argument('--headless')
+        options.add_argument("--disable-blink-features=AutomationControlled")
+        driver = webdriver.Chrome(options=options)
+
+        all_item = Item.objects.exclude(jan_code__exact='')
+        all_mono = Mono.objects.all()
+
+        fetched_items_jan_code_set = set()
+        print('all_item:'+str(len(all_item)))
+        for item in all_item:
+            fetched_items_jan_code_set.add(item.jan_code)
+
+        fetched_monos_jan_code_set = set()
+        print('all_mono:'+str(len(all_mono)))
+        for mono in all_mono:
+            fetched_monos_jan_code_set.add(mono.jan_code)
+
+        fetch_jan_code_set = set()
+        fetch_jan_code_set = fetched_items_jan_code_set.difference(
+            fetched_monos_jan_code_set)
+
+        print('diff_jan:'+str(len(fetch_jan_code_set)))
+        for jan_code in fetch_jan_code_set:
+            print(jan_code)
+            get_mono_info(driver, jan_code)
+
+
+def get_mono_info(driver, jan_code):
+    driver.get('https://mnsearch.com/')
+    time.sleep(random.randint(0, 5))
+    selector = 'form.search_form input'
+    element = driver.find_element_by_css_selector(selector)
+    print(element.text)
+    element.send_keys(jan_code)
+    element.send_keys(Keys.ENTER)
+    time.sleep(3)
+
+    mono_info = Mono()
+    mono_info.item_url = driver.current_url
+    mono_info.jan_code = jan_code
+    print(driver.current_url)
+    print(jan_code)
+
+    selector = 'section#__main_content_title_area h3'
+    try:
+        item_name_element = driver.find_element_by_css_selector(selector)
+        mono_info.item_name = item_name_element.text
+        print(item_name_element.text)
+    except Exception as e:
+        print(e)
+        return
+
+    try:
+        selector = 'table#_shopList_new'
+        shop_table_element = driver.find_element_by_css_selector(selector)
+
+        selector = 'tr'
+        shop_list_elements = shop_table_element.find_elements_by_css_selector(
+            selector)
+
+        for shop_list_element in shop_list_elements:
+            if shop_list_element is None:
+                break
+            if 'サイト名' in shop_list_element.text:
+                print(shop_list_element.text)
+                continue
+            print('table')
+            selector = 'span.siteTitle'
+            shop_name_element = shop_list_element.find_element_by_css_selector(
+                selector)
+            mono_info.shop_name = shop_name_element.text
+            print(shop_name_element.text)
+
+            selector = 'span.price'
+            item_price_element = shop_list_element.find_element_by_css_selector(
+                selector)
+            mono_info.item_price = item_price_element.text.replace(
+                ',', '').replace('円', '')
+            print(item_price_element.text.replace(
+                ',', '').replace('円', ''))
+
+            break
+
+        try:
+            mono_info.save()
+            print('mono_info.save')
+            time.sleep(3)
+        except Exception as e:
+            print(e)
+
+    except Exception as e:
+        print(e)
+        return
 
 
 class GetGeiThread(threading.Thread):
@@ -395,6 +499,7 @@ def get_gei_info(driver, url):
         try:
             gei_info.save()
             print('gei_info.save')
+            time.sleep(3)
         except Exception as e:
             print(e)
 
@@ -417,6 +522,17 @@ def get_info(request):
         t.start()
     print('getinfo end')
     return HttpResponse('info')
+
+
+def get_mono(request):
+    print('get_mono start')
+    print('active_count:' + str(threading.active_count()))
+    print('enumerate:' + str(threading.enumerate()))
+    if 'GetMonoThread' not in str(threading.enumerate()):
+        t = GetMonoThread()
+        t.start()
+    print('get_mono end')
+    return HttpResponse('mono')
 
 
 def get_gei(request):
