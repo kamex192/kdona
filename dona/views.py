@@ -368,23 +368,28 @@ def get_mono_info(driver, jan_code):
             element.send_keys(Keys.ENTER)
             break
 
-    time.sleep(random.randint(3,
-                              7))
+    time.sleep(random.randint(10,
+                              15))
     # print(driver.page_source)
-    selector = 'form.search_form input'
-    element = driver.find_element_by_css_selector(selector)
-    print(element.text)
-    element.send_keys(jan_code)
-    element.send_keys(Keys.ENTER)
-    time.sleep(3)
+    try:
+        selector = 'form.search_form input'
+        element = driver.find_element_by_css_selector(selector)
+        print(element.text)
+        element.send_keys(jan_code)
+        element.send_keys(Keys.ENTER)
+        time.sleep(3)
 
-    mono_info = Mono()
-    mono_info.item_url = driver.current_url
-    mono_info.jan_code = jan_code
-    print(driver.current_url)
-    print(jan_code)
+        mono_info = Mono()
+        mono_info.item_url = driver.current_url
+        mono_info.jan_code = jan_code
+        print(driver.current_url)
+        print(jan_code)
 
-    selector = 'section#__main_content_title_area h3'
+        selector = 'section#__main_content_title_area h3'
+    except Exception as e:
+        print(e)
+        return
+
     try:
         item_name_element = driver.find_element_by_css_selector(selector)
         mono_info.item_name = item_name_element.text
