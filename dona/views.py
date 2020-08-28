@@ -48,6 +48,7 @@ def get_month_url(driver):
     selector = 'a'
     elements = driver.find_elements_by_css_selector(selector)
     for element in elements:
+        print(element.text)
         if '楽天ブックス' in element.text:
             url = element.get_attribute('href')
             print(url)
@@ -353,7 +354,20 @@ class GetMonoThread(threading.Thread):
 
 
 def get_mono_info(driver, jan_code):
-    driver.get('https://mnsearch.com/')
+    driver.get('https://www.google.com')
+    element = driver.find_element(By.CSS_SELECTOR, '[name="q"]')
+    element.send_keys("モノサーチ")
+    element.send_keys(Keys.ENTER)
+
+    selector = 'a'
+    elements = driver.find_elements_by_css_selector(selector)
+    for element in elements:
+        url = element.get_attribute('href')
+        if 'mnsearch' in str(url):
+            print(url)
+            element.send_keys(Keys.ENTER)
+            break
+
     time.sleep(random.randint(0, 5))
     selector = 'form.search_form input'
     element = driver.find_element_by_css_selector(selector)
