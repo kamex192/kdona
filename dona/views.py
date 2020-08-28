@@ -368,7 +368,8 @@ def get_mono_info(driver, jan_code):
             element.send_keys(Keys.ENTER)
             break
 
-    time.sleep(random.randint(0, 5))
+    time.sleep(random.randint(3, 7))
+    print(driver.page_source)
     selector = 'form.search_form input'
     element = driver.find_element_by_css_selector(selector)
     print(element.text)
