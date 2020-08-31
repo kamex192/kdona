@@ -1,3 +1,4 @@
+from django.db import connection
 from django.http import HttpResponse
 from dona.models import Item
 from dona.models import Gei
@@ -19,8 +20,11 @@ import math
 
 import random
 
+import csv
+import urllib
 
-class GetInfoThread(threading.Thread):
+
+class GetItemThread(threading.Thread):
     def run(self):
         print('active_count:' + str(threading.active_count()))
         print('enumerate:' + str(threading.enumerate()))
@@ -535,15 +539,15 @@ def index(request):
     return HttpResponse('index')
 
 
-def get_info(request):
-    print('getinfo start')
+def get_item(request):
+    print('get_item start')
     print('active_count:' + str(threading.active_count()))
     print('enumerate:' + str(threading.enumerate()))
-    if 'GetInfoThread' not in str(threading.enumerate()):
-        t = GetInfoThread()
+    if 'GetItemThread' not in str(threading.enumerate()):
+        t = GetItemThread()
         t.start()
-    print('getinfo end')
-    return HttpResponse('info')
+    print('get_item end')
+    return HttpResponse('item')
 
 
 def get_mono(request):
@@ -566,6 +570,97 @@ def get_gei(request):
         t.start()
     print('get_gei end')
     return HttpResponse('gei')
+
+
+def output_item(request):
+    print('output_item start')
+    response = HttpResponse(content_type='text/csv; charset=UTF-8')
+    filename = urllib.parse.quote((u'item.csv').encode("utf8"))
+    response['Content-Disposition'] = 'attachment; filename*=UTF-8\'\'{}'.format(
+        filename)
+    writer = csv.writer(response)
+
+    meta = Item._meta
+    field_names = [field.name for field in meta.fields]
+    for item in Item.objects.all():
+        writer.writerow([getattr(item, field) for field in field_names])
+    return response
+
+
+def output_mono(request):
+    print('output_mono start')
+    response = HttpResponse(content_type='text/csv; charset=UTF-8')
+    filename = urllib.parse.quote((u'mono.csv').encode("utf8"))
+    response['Content-Disposition'] = 'attachment; filename*=UTF-8\'\'{}'.format(
+        filename)
+    writer = csv.writer(response)
+
+    meta = Mono._meta
+    field_names = [field.name for field in meta.fields]
+    for mono in Mono.objects.all():
+        writer.writerow([getattr(mono, field) for field in field_names])
+    return response
+
+
+def output_gei(request):
+    print('output_gei start')
+    response = HttpResponse(content_type='text/csv; charset=UTF-8')
+    filename = urllib.parse.quote((u'gei.csv').encode("utf8"))
+    response['Content-Disposition'] = 'attachment; filename*=UTF-8\'\'{}'.format(
+        filename)
+    writer = csv.writer(response)
+
+    meta = Gei._meta
+    field_names = [field.name for field in meta.fields]
+    for gei in Gei.objects.all():
+        writer.writerow([getattr(gei, field) for field in field_names])
+    return response
+
+
+def output_item_mono(request):
+    print('output_item_mono start')
+    response = HttpResponse(content_type='text/csv; charset=UTF-8')
+    filename = urllib.parse.quote((u'item_mono.csv').encode("utf8"))
+    response['Content-Disposition'] = 'attachment; filename*=UTF-8\'\'{}'.format(
+        filename)
+    writer = csv.writer(response)
+
+    cursor = connection.cursor()
+    # cursor.execute(
+    #     "SELECT * FROM dona_Item LEFT OUTER JOIN dona_Mono ON dona_Item.jan_code=dona_Mono.jan_code")
+    cursor.execute(
+        "SELECT * FROM dona_Item INNER JOIN dona_Mono ON dona_Item.jan_code=dona_Mono.jan_code")
+    item_mono_object = cursor.fetchall()
+    print('len(cursor)')
+    print(len(item_mono_object))
+
+    for item_mono in item_mono_object:
+        writer.writerow([*item_mono])
+
+    return response
+
+
+def output_item_mono_gei(request):
+    print('output_item_mono_gei start')
+    response = HttpResponse(content_type='text/csv; charset=UTF-8')
+    filename = urllib.parse.quote((u'item_mono_gei.csv').encode("utf8"))
+    response['Content-Disposition'] = 'attachment; filename*=UTF-8\'\'{}'.format(
+        filename)
+    writer = csv.writer(response)
+
+    cursor = connection.cursor()
+    # cursor.execute(
+    #     "SELECT * FROM dona_Item LEFT OUTER JOIN dona_Mono ON dona_Item.jan_code=dona_Mono.jan_code LEFT OUTER JOIN dona_Gei ON dona_Mono.item_name Like '%' || dona_Item.item_name || '%'")
+    cursor.execute(
+        "SELECT * FROM dona_Item INNER JOIN dona_Mono ON dona_Item.jan_code=dona_Mono.jan_code INNER JOIN dona_Gei ON dona_Gei.item_name Like '%' || dona_Mono.item_name || '%'")
+    output_item_mono_gei_object = cursor.fetchall()
+    print('len(cursor)')
+    print(len(output_item_mono_gei_object))
+
+    for output_item_mono_gei in output_item_mono_gei_object:
+        writer.writerow([*output_item_mono_gei])
+
+    return response
 
 
 def check(request):
