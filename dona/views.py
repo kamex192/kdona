@@ -369,17 +369,22 @@ class GetMonoThread(threading.Thread):
         options.add_argument("--disable-blink-features=AutomationControlled")
         driver = webdriver.Chrome(options=options)
 
-        with connection.cursor() as cursor:
-            cursor.execute(
-                "SELECT dona_Item.jan_code AS item_jan_code, dona_Item.asin_code AS item_asin_code, dona_Item.jan_code AS item_jan_code, dona_Item.asin_code AS item_asin_code FROM dona_Item LEFT OUTER JOIN dona_Mono ON dona_Item.asin_code=dona_Mono.asin_code")
+        cursor = connection.cursor()
+        cursor.execute("SELECT dona_Item.jan_code AS item_jan_code, dona_Item.asin_code AS item_asin_code, dona_Mono.jan_code AS mono_jan_code, dona_Mono.asin_code AS mono_asin_code FROM dona_Item LEFT OUTER JOIN dona_Mono ON dona_Item.asin_code=dona_Mono.asin_code")
 
         item_mono_object = namedtuplefetchall(cursor)
         print('len(cursor)')
         print(len(item_mono_object))
 
         for item_mono in item_mono_object:
-            print(item_mono)
-            # get_mono_info(driver, item_mono)
+            if item_mono.item_asin_code == '':
+                # print('no asin code item_mono')
+                # print(item_mono)
+                continue
+            if item_mono.mono_asin_code is None:
+                # print('fetch mono data')
+                print(item_mono)
+                get_mono_info(driver, item_mono)
 
 
 def namedtuplefetchall(cursor):
@@ -390,7 +395,7 @@ def namedtuplefetchall(cursor):
     return [nt_result(*row) for row in cursor.fetchall()]
 
 
-def get_mono_info(driver, asin_code):
+def get_mono_info(driver, code):
     driver.get('https://www.google.com')
     element = driver.find_element(By.CSS_SELECTOR, '[name="q"]')
     element.send_keys("モノサーチ")
@@ -413,15 +418,17 @@ def get_mono_info(driver, asin_code):
         selector = 'form.search_form input'
         element = driver.find_element_by_css_selector(selector)
         print(element.text)
-        element.send_keys(asin_code)
+        element.send_keys(code.item_asin_code)
         element.send_keys(Keys.ENTER)
         time.sleep(3)
 
         mono_info = Mono()
         mono_info.item_url = driver.current_url
-        mono_info.asin_code = asin_code
-        print(driver.current_url)
-        print(asin_code)
+        mono_info.jan_code = code.item_jan_code
+        mono_info.asin_code = code.item_asin_code
+        print(mono_info.item_url)
+        print(mono_info.jan_code)
+        print(mono_info.asin_code)
 
         selector = 'section#__main_content_title_area h3'
     except Exception as e:
@@ -559,7 +566,8 @@ def get_gei_info(driver, url):
         pattern = '.*】(.*)'
         result = re.match(pattern, gei_info.item_name, flags=re.DOTALL)
         if result is not None:
-            gei_info.jan_code = chg_name_to_jancode(result.group(1))
+            gei_info.asin_code, gei_info.asin_name = chg_name_to_asin(
+                result.group(1))
 
         try:
             gei_info.save()
@@ -569,8 +577,8 @@ def get_gei_info(driver, url):
             print(e)
 
 
-def chg_name_to_jancode(name):
-    print('chg_name_to_jancode start')
+def chg_name_to_jan(name):
+    print('chg_name_to_jan start')
     jancode = ''
     asin_name = ''
 
@@ -616,7 +624,7 @@ def chg_name_to_jancode(name):
     print(jancode)
     print(asin_name)
 
-    print('chg_name_to_jancode end')
+    print('chg_name_to_jan end')
     return jancode, asin_name
 
 
@@ -821,7 +829,7 @@ def output_item_mono(request):
     # cursor.execute(
     #     "SELECT * FROM dona_Item LEFT OUTER JOIN dona_Mono ON dona_Item.jan_code=dona_Mono.jan_code")
     cursor.execute(
-        "SELECT * FROM dona_Item INNER JOIN dona_Mono ON dona_Item.jan_code=dona_Mono.jan_code")
+        "SELECT * FROM dona_Item INNER JOIN dona_Mono ON dona_Item.asin_code=dona_Mono.asin_code")
     item_mono_object = cursor.fetchall()
     print('len(cursor)')
     print(len(item_mono_object))
@@ -844,7 +852,7 @@ def output_item_mono_gei(request):
     # cursor.execute(
     #     "SELECT * FROM dona_Item LEFT OUTER JOIN dona_Mono ON dona_Item.jan_code=dona_Mono.jan_code LEFT OUTER JOIN dona_Gei ON dona_Mono.item_name Like '%' || dona_Item.item_name || '%'")
     cursor.execute(
-        "SELECT * FROM dona_Item INNER JOIN dona_Mono ON dona_Item.jan_code=dona_Mono.jan_code INNER JOIN dona_Gei ON dona_Item.jan_code=dona_Gei.jan_code")
+        "SELECT * FROM dona_Item INNER JOIN dona_Mono ON dona_Item.asin_code=dona_Mono.asin_code INNER JOIN dona_Gei ON dona_Item.asin_code=dona_Gei.asin_code")
     output_item_mono_gei_object = cursor.fetchall()
     print('len(cursor)')
     print(len(output_item_mono_gei_object))

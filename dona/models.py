@@ -37,3 +37,4 @@ class Gei(models.Model):
     post_date = models.DateTimeField()
     jan_code = models.TextField()
     asin_code = models.TextField()
+    asin_name = models.TextField()
