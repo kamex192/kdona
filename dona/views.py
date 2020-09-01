@@ -1,3 +1,4 @@
+from collections import namedtuple
 from django.db import connection
 from django.http import HttpResponse
 from dona.models import Item
@@ -200,22 +201,18 @@ def get_item_info(driver, item_info_url):
     driver.get(item_info_url)
     item_info = Item()
 
-    item_info_dict = {}
-    item_info_dict['item_url'] = item_info_url
     item_info.item_url = item_info_url
 
     selector = 'h1[itemprop="name"]'
     elements = driver.find_elements_by_css_selector(selector)
     for element in elements:
-        item_info_dict['item_name'] = element.text
+        print(element.text)
         item_info.item_name = element.text
 
     selector = 'span[itemprop="price"]'
     elements = driver.find_elements_by_css_selector(selector)
     for element in elements:
         print(element.text)
-        item_info_dict['item_price'] = element.text.replace(
-            ',', '').replace('円', '')
         item_info.item_price = element.text.replace(',', '').replace('円', '')
 
     selector = 'li.productInfo'
@@ -226,8 +223,6 @@ def get_item_info(driver, item_info_url):
             pattern = '.*：  (.*)'
             result = re.match(pattern, element.text, flags=re.DOTALL)
             if result is not None:
-                item_info_dict['release_date'] = result.group(1).replace(
-                    '年', '-').replace('月', '-').replace('日', '')
                 item_info.release_date = result.group(1).replace(
                     '年', '-').replace('月', '-').replace('日', '')
         if 'アーティスト' in element.text:
@@ -235,85 +230,125 @@ def get_item_info(driver, item_info_url):
             pattern = '.*：  (.*)'
             result = re.match(pattern, element.text, flags=re.DOTALL)
             if result is not None:
-                item_info_dict['artist'] = result.group(1)
                 item_info.artist = result.group(1)
         if '監督' in element.text:
             print(element.text)
             pattern = '.*：  (.*)'
             result = re.match(pattern, element.text, flags=re.DOTALL)
             if result is not None:
-                item_info_dict['director'] = result.group(1)
                 item_info.director = result.group(1)
         if '関連作品' in element.text:
             print(element.text)
             pattern = '.*：  (.*)'
             result = re.match(pattern, element.text, flags=re.DOTALL)
             if result is not None:
-                item_info_dict['related_works'] = result.group(1)
                 item_info.related_works = result.group(1)
         if '発売元' in element.text:
             print(element.text)
             pattern = '.*：  (.*)'
             result = re.match(pattern, element.text, flags=re.DOTALL)
             if result is not None:
-                item_info_dict['selling_agency'] = result.group(1)
                 item_info.selling_agency = result.group(1)
         if '販売元' in element.text:
             print(element.text)
             pattern = '.*：  (.*)'
             result = re.match(pattern, element.text, flags=re.DOTALL)
             if result is not None:
-                item_info_dict['distributor'] = result.group(1)
                 item_info.distributor = result.group(1)
         if 'ディスク枚数' in element.text:
             print(element.text)
             pattern = '.*：  (.*)'
             result = re.match(pattern, element.text, flags=re.DOTALL)
             if result is not None:
-                item_info_dict['number_of_disks'] = result.group(1)
                 item_info.number_of_disks = result.group(1)
         if '収録時間' in element.text:
             print(element.text)
             pattern = '.*：  (.*)'
             result = re.match(pattern, element.text, flags=re.DOTALL)
             if result is not None:
-                item_info_dict['duration'] = result.group(1)
                 item_info.duration = result.group(1)
         if '映像特典内容' in element.text:
             print(element.text)
             pattern = '.*：  (.*)'
             result = re.match(pattern, element.text, flags=re.DOTALL)
             if result is not None:
-                item_info_dict['bonus_video'] = result.group(1)
                 item_info.bonus_video = result.group(1)
         if 'メーカー品番' in element.text:
             print(element.text)
             pattern = '.*：  (.*)'
             result = re.match(pattern, element.text, flags=re.DOTALL)
             if result is not None:
-                item_info_dict['manufacturer_part_number'] = result.group(1)
                 item_info.manufacturer_part_number = result.group(1)
         if 'JANコード' in element.text:
             print(element.text)
             pattern = '.*：  (.*)'
             result = re.match(pattern, element.text, flags=re.DOTALL)
             if result is not None:
-                item_info_dict['jan_code'] = result.group(1)
                 item_info.jan_code = result.group(1)
+                print('yes jan code')
+                print(item_info.jan_code)
+                item_info.asin_code, item_info.asin_name = chg_jancode_to_asin(
+                    item_info.jan_code)
+                print('yes jan to asin code')
+                print(item_info.asin_code)
+                print(item_info.asin_name)
+                if item_info.asin_code == '':
+                    item_name = ''
+                    pattern = '.*】(.*)'
+                    result = re.match(pattern, item_info.item_name)
+                    if result is not None:
+                        item_name = result.group(1)
+                    print('item_name .*】')
+                    print(item_name)
+                    if item_name == '':
+                        print('item_name (.*)')
+                        pattern = '(.*)'
+                        result = re.match(pattern, item_info.item_name)
+                        if result is not None:
+                            item_name = result.group(1)
+
+                    item_info.asin_code, item_info.asin_name = chg_name_to_asin(
+                        item_name)
+
+                    print('yes name to asin code')
+                    print(item_info.asin_code)
+                    print(item_info.asin_name)
         if 'インストアコード' in element.text:
             print(element.text)
             pattern = '.*：  (.*)'
             result = re.match(pattern, element.text, flags=re.DOTALL)
             if result is not None:
-                item_info_dict['in_store_code'] = result.group(1)
                 item_info.in_store_code = result.group(1)
         if 'セット内容' in element.text:
             print(element.text)
             pattern = '.*：  (.*)'
             result = re.match(pattern, element.text, flags=re.DOTALL)
             if result is not None:
-                item_info_dict['set_content'] = result.group(1)
                 item_info.set_content = result.group(1)
+
+    if item_info.jan_code == '':
+        print('no name to asin code stat')
+        print(item_info.jan_code)
+        print(item_info.item_name)
+        item_name = ''
+        pattern = '.*】(.*)'
+        result = re.match(pattern, item_info.item_name)
+        if result is not None:
+            item_name = result.group(1)
+        print('item_name .*】')
+        print(item_name)
+        if item_name == '':
+            print('item_name (.*)')
+            pattern = '(.*)'
+            result = re.match(pattern, item_info.item_name)
+            if result is not None:
+                item_name = result.group(1)
+
+        item_info.asin_code, item_info.asin_name = chg_name_to_asin(
+            item_name)
+        print('no name to asin code end')
+        print(item_info.asin_code)
+        print(item_info.asin_name)
 
     try:
         item_info.save()
@@ -322,7 +357,7 @@ def get_item_info(driver, item_info_url):
         print(e)
 
     print('get_item_info end')
-    return item_info_dict
+    return 'get_item_info'
 
 
 class GetMonoThread(threading.Thread):
@@ -334,30 +369,28 @@ class GetMonoThread(threading.Thread):
         options.add_argument("--disable-blink-features=AutomationControlled")
         driver = webdriver.Chrome(options=options)
 
-        all_item = Item.objects.exclude(jan_code__exact='')
-        all_mono = Mono.objects.all()
+        with connection.cursor() as cursor:
+            cursor.execute(
+                "SELECT dona_Item.jan_code AS item_jan_code, dona_Item.asin_code AS item_asin_code, dona_Item.jan_code AS item_jan_code, dona_Item.asin_code AS item_asin_code FROM dona_Item LEFT OUTER JOIN dona_Mono ON dona_Item.asin_code=dona_Mono.asin_code")
 
-        fetched_items_jan_code_set = set()
-        print('all_item:'+str(len(all_item)))
-        for item in all_item:
-            fetched_items_jan_code_set.add(item.jan_code)
+        item_mono_object = namedtuplefetchall(cursor)
+        print('len(cursor)')
+        print(len(item_mono_object))
 
-        fetched_monos_jan_code_set = set()
-        print('all_mono:'+str(len(all_mono)))
-        for mono in all_mono:
-            fetched_monos_jan_code_set.add(mono.jan_code)
-
-        fetch_jan_code_set = set()
-        fetch_jan_code_set = fetched_items_jan_code_set.difference(
-            fetched_monos_jan_code_set)
-
-        print('diff_jan:'+str(len(fetch_jan_code_set)))
-        for jan_code in fetch_jan_code_set:
-            print(jan_code)
-            get_mono_info(driver, jan_code)
+        for item_mono in item_mono_object:
+            print(item_mono)
+            # get_mono_info(driver, item_mono)
 
 
-def get_mono_info(driver, jan_code):
+def namedtuplefetchall(cursor):
+    "Return all rows from a cursor as a namedtuple"
+    desc = cursor.description
+    print(desc)
+    nt_result = namedtuple('Result', [col[0] for col in desc])
+    return [nt_result(*row) for row in cursor.fetchall()]
+
+
+def get_mono_info(driver, asin_code):
     driver.get('https://www.google.com')
     element = driver.find_element(By.CSS_SELECTOR, '[name="q"]')
     element.send_keys("モノサーチ")
@@ -380,15 +413,15 @@ def get_mono_info(driver, jan_code):
         selector = 'form.search_form input'
         element = driver.find_element_by_css_selector(selector)
         print(element.text)
-        element.send_keys(jan_code)
+        element.send_keys(asin_code)
         element.send_keys(Keys.ENTER)
         time.sleep(3)
 
         mono_info = Mono()
         mono_info.item_url = driver.current_url
-        mono_info.jan_code = jan_code
+        mono_info.asin_code = asin_code
         print(driver.current_url)
-        print(jan_code)
+        print(asin_code)
 
         selector = 'section#__main_content_title_area h3'
     except Exception as e:
@@ -522,6 +555,12 @@ def get_gei_info(driver, url):
         item_url = item_url_element.get_attribute('href')
         gei_info.item_url = item_url
         print(item_url)
+
+        pattern = '.*】(.*)'
+        result = re.match(pattern, gei_info.item_name, flags=re.DOTALL)
+        if result is not None:
+            gei_info.jan_code = chg_name_to_jancode(result.group(1))
+
         try:
             gei_info.save()
             print('gei_info.save')
@@ -530,12 +569,160 @@ def get_gei_info(driver, url):
             print(e)
 
 
+def chg_name_to_jancode(name):
+    print('chg_name_to_jancode start')
+    jancode = ''
+    asin_name = ''
+
+    options = Options()
+    options.add_argument('--headless')
+    options.add_argument("--disable-blink-features=AutomationControlled")
+    driver = webdriver.Chrome(options=options)
+
+    url = 'https://antlion.xsrv.jp/'
+    driver.get(url)
+    print(url)
+    time.sleep(random.randint(5, 10))
+    selector = 'form#searchform input#s'
+    element = driver.find_element_by_css_selector(selector)
+    element.send_keys(name)
+    element.send_keys(Keys.ENTER)
+    time.sleep(random.randint(5, 10))
+
+    try:
+        selector = 'h4 a, li'
+        elements = driver.find_elements_by_css_selector(selector)
+        for element in elements:
+            print(element.text)
+            if element.get_attribute('href') is not None:
+                print(element.text)
+                asin_name = element.text
+            print(element.text)
+            if 'JAN' in element.text:
+                print(element.text)
+                pattern = '.* : (.*)'
+                result = re.match(pattern, element.text, flags=re.DOTALL)
+                if result is not None:
+                    jancode = result.group(1)
+                break
+    except Exception as e:
+        print(e)
+
+    driver.close()
+    time.sleep(3)
+
+    print('name jancode')
+    print(name)
+    print(jancode)
+    print(asin_name)
+
+    print('chg_name_to_jancode end')
+    return jancode, asin_name
+
+
+def chg_name_to_asin(name):
+    print('chg_name_to_asin start')
+    print(name)
+    asin_code = ''
+    asin_name = ''
+
+    options = Options()
+    options.add_argument('--headless')
+    options.add_argument("--disable-blink-features=AutomationControlled")
+    driver = webdriver.Chrome(options=options)
+
+    url = 'https://antlion.xsrv.jp/'
+    driver.get(url)
+    print(url)
+    time.sleep(random.randint(5, 10))
+    selector = 'form#searchform input#s'
+    element = driver.find_element_by_css_selector(selector)
+    element.send_keys(name)
+    element.send_keys(Keys.ENTER)
+    time.sleep(random.randint(5, 10))
+    try:
+        selector = 'h4 a, li'
+        elements = driver.find_elements_by_css_selector(selector)
+        for element in elements:
+            print(element.text)
+            if element.get_attribute('href') is not None:
+                print(element.text)
+                asin_name = element.text
+            if 'ASIN' in element.text:
+                print(element.text)
+                pattern = '.* : (.*)'
+                result = re.match(pattern, element.text, flags=re.DOTALL)
+                if result is not None:
+                    asin_code = result.group(1)
+                break
+    except Exception as e:
+        print(e)
+
+    driver.close()
+    time.sleep(3)
+
+    print('name asin')
+    print(name)
+    print(asin_code)
+    print(asin_name)
+
+    print('chg_name_to_asin end')
+    return asin_code, asin_name
+
+
+def chg_jancode_to_asin(jancode):
+    print('chg_jancode_to_asin start')
+    asin_code = ''
+    asin_name = ''
+
+    options = Options()
+    options.add_argument('--headless')
+    options.add_argument("--disable-blink-features=AutomationControlled")
+    driver = webdriver.Chrome(options=options)
+
+    url = 'https://antlion.xsrv.jp/'
+    driver.get(url)
+    print(url)
+    time.sleep(random.randint(5, 10))
+    selector = 'form#searchform input#s'
+    element = driver.find_element_by_css_selector(selector)
+    element.send_keys(jancode)
+    element.send_keys(Keys.ENTER)
+    time.sleep(random.randint(5, 10))
+
+    try:
+        selector = 'h4 a, li'
+        elements = driver.find_elements_by_css_selector(selector)
+        for element in elements:
+            print(element.text)
+            if element.get_attribute('href') is not None:
+                print(element.text)
+                asin_name = element.text
+            if 'ASIN' in element.text:
+                print(element.text)
+                pattern = '.* : (.*)'
+                result = re.match(pattern, element.text, flags=re.DOTALL)
+                if result is not None:
+                    asin_code = result.group(1)
+                break
+    except Exception as e:
+        print(e)
+
+    driver.close()
+    time.sleep(3)
+
+    print('jancode asin')
+    print(jancode)
+    print(asin_code)
+    print(asin_name)
+
+    print('chg_jancode_to_asin end')
+    return asin_code, asin_name
+
+
 def index(request):
-    content = r'hellow python, 123, end.'
-    pattern = '.*lowp.*123.*'
-    result = re.match(pattern, content)
-    if result is not None:
-        print('is not None')
+    chg_name_to_asin(
+        '私の彼はエプロン男子')
     return HttpResponse('index')
 
 
@@ -570,6 +757,11 @@ def get_gei(request):
         t.start()
     print('get_gei end')
     return HttpResponse('gei')
+
+
+def dell_all_gei(request):
+    Gei.objects.all().delete()
+    return HttpResponse('dell_all_gei')
 
 
 def output_item(request):
@@ -652,7 +844,7 @@ def output_item_mono_gei(request):
     # cursor.execute(
     #     "SELECT * FROM dona_Item LEFT OUTER JOIN dona_Mono ON dona_Item.jan_code=dona_Mono.jan_code LEFT OUTER JOIN dona_Gei ON dona_Mono.item_name Like '%' || dona_Item.item_name || '%'")
     cursor.execute(
-        "SELECT * FROM dona_Item INNER JOIN dona_Mono ON dona_Item.jan_code=dona_Mono.jan_code INNER JOIN dona_Gei ON dona_Gei.item_name Like '%' || dona_Mono.item_name || '%'")
+        "SELECT * FROM dona_Item INNER JOIN dona_Mono ON dona_Item.jan_code=dona_Mono.jan_code INNER JOIN dona_Gei ON dona_Item.jan_code=dona_Gei.jan_code")
     output_item_mono_gei_object = cursor.fetchall()
     print('len(cursor)')
     print(len(output_item_mono_gei_object))

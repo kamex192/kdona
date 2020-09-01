@@ -18,13 +18,8 @@ class Item(models.Model):
     jan_code = models.TextField()
     in_store_code = models.TextField()
     set_content = models.TextField()
-
-
-class Err(models.Model):
-    item_name = models.CharField(max_length=200)
-    item_code = models.CharField(max_length=200)
-    err = models.CharField(max_length=200)
-    err_date = models.DateTimeField('date published')
+    asin_code = models.TextField()
+    asin_name = models.TextField()
 
 
 class Mono(models.Model):
@@ -33,9 +28,12 @@ class Mono(models.Model):
     shop_name = models.TextField()
     item_price = models.TextField()
     jan_code = models.TextField()
+    asin_code = models.TextField()
 
 
 class Gei(models.Model):
     item_name = models.TextField()
     item_url = models.TextField(unique=True)
     post_date = models.DateTimeField()
+    jan_code = models.TextField()
+    asin_code = models.TextField()
