@@ -46,7 +46,7 @@ class GetItemThread(threading.Thread):
         #         target=get_items_info, args=([month_url]))
         #     thread.start()
 
-        rand_month_url = random.sample(list(month_url_dict.values()), 2)
+        rand_month_url = random.sample(list(month_url_dict.values()), 1)
         print(rand_month_url)
         for month_url in rand_month_url:
             thread = threading.Thread(
