@@ -38,7 +38,14 @@ class GetItemThread(threading.Thread):
         # month_url_dict = {'2020年5月': 'https://books.rakuten.co.jp/calendar/003/monthly/?tid=2020-05-01', '2020年6月': 'https://books.rakuten.co.jp/calendar/003/monthly/?tid=2020-06-01', '2020年7月': 'https://books.rakuten.co.jp/calendar/003/monthly/?tid=2020-07-01',
         #                   '2020年8月': 'https://books.rakuten.co.jp/calendar/003/monthly/?tid=2020-08-01', '2020年9月': 'https://books.rakuten.co.jp/calendar/003/monthly/?tid=2020-09-01', '2020年10月': 'https://books.rakuten.co.jp/calendar/003/monthly/?tid=2020-10-01', '2020年11月': 'https://books.rakuten.co.jp/calendar/003/monthly/?tid=2020-11-01'}
         print(month_url_dict)
-        for month_url in month_url_dict.values():
+        # for month_url in month_url_dict.values():
+        #     thread = threading.Thread(
+        #         target=get_items_info, args=([month_url]))
+        #     thread.start()
+
+        rand_month_url = random.sample(list(month_url_dict.values()), 3)
+        print(rand_month_url)
+        for month_url in rand_month_url:
             thread = threading.Thread(
                 target=get_items_info, args=([month_url]))
             thread.start()
