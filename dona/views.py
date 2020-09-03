@@ -39,7 +39,9 @@ class GetItemThread(threading.Thread):
         #                   '2020年8月': 'https://books.rakuten.co.jp/calendar/003/monthly/?tid=2020-08-01', '2020年9月': 'https://books.rakuten.co.jp/calendar/003/monthly/?tid=2020-09-01', '2020年10月': 'https://books.rakuten.co.jp/calendar/003/monthly/?tid=2020-10-01', '2020年11月': 'https://books.rakuten.co.jp/calendar/003/monthly/?tid=2020-11-01'}
         print(month_url_dict)
         for month_url in month_url_dict.values():
-            get_items_info(driver, month_url)
+            thread = threading.Thread(
+                target=get_items_info, args=([month_url]))
+            thread.start()
 
 
 def get_month_url(driver):
@@ -117,9 +119,14 @@ def get_month_url(driver):
     return month_url_dict
 
 
-def get_items_info(driver, month_url):
+def get_items_info(month_url):
     print('get items info start')
     print(month_url)
+    options = Options()
+    options.add_argument('--headless')
+    options.add_argument("--disable-blink-features=AutomationControlled")
+    driver = webdriver.Chrome(options=options)
+
     items_info_dict = {}
     items_info_url_set = set()
 
