@@ -285,34 +285,6 @@ def get_item_info(driver, item_info_url):
             result = re.match(pattern, element.text, flags=re.DOTALL)
             if result is not None:
                 item_info.jan_code = result.group(1)
-                print('yes jan code')
-                print(item_info.jan_code)
-                item_info.asin_code, item_info.asin_name = chg_jancode_to_asin(
-                    item_info.jan_code)
-                print('yes jan to asin code')
-                print(item_info.asin_code)
-                print(item_info.asin_name)
-                if item_info.asin_code == '':
-                    item_name = ''
-                    pattern = '.*】(.*)'
-                    result = re.match(pattern, item_info.item_name)
-                    if result is not None:
-                        item_name = result.group(1)
-                    print('item_name .*】')
-                    print(item_name)
-                    if item_name == '':
-                        print('item_name (.*)')
-                        pattern = '(.*)'
-                        result = re.match(pattern, item_info.item_name)
-                        if result is not None:
-                            item_name = result.group(1)
-
-                    item_info.asin_code, item_info.asin_name = chg_name_to_asin(
-                        item_name)
-
-                    print('yes name to asin code')
-                    print(item_info.asin_code)
-                    print(item_info.asin_name)
         if 'インストアコード' in element.text:
             print(element.text)
             pattern = '.*：  (.*)'
@@ -344,11 +316,40 @@ def get_item_info(driver, item_info_url):
             if result is not None:
                 item_name = result.group(1)
 
-        item_info.asin_code, item_info.asin_name = chg_name_to_asin(
-            item_name)
+        item_info.asin_code, item_info.asin_name = chg_name_to_asin(driver,
+                                                                    item_name)
         print('no name to asin code end')
         print(item_info.asin_code)
         print(item_info.asin_name)
+    else:
+        print('yes jan code')
+        print(item_info.jan_code)
+        item_info.asin_code, item_info.asin_name = chg_jancode_to_asin(driver,
+                                                                       item_info.jan_code)
+        print('yes jan to asin code')
+        print(item_info.asin_code)
+        print(item_info.asin_name)
+        if item_info.asin_code == '':
+            item_name = ''
+            pattern = '.*】(.*)'
+            result = re.match(pattern, item_info.item_name)
+            if result is not None:
+                item_name = result.group(1)
+            print('item_name .*】')
+            print(item_name)
+            if item_name == '':
+                print('item_name (.*)')
+                pattern = '(.*)'
+                result = re.match(pattern, item_info.item_name)
+                if result is not None:
+                    item_name = result.group(1)
+
+            item_info.asin_code, item_info.asin_name = chg_name_to_asin(driver,
+                                                                        item_name)
+
+            print('yes name to asin code')
+            print(item_info.asin_code)
+            print(item_info.asin_name)
 
     try:
         item_info.save()
@@ -566,8 +567,8 @@ def get_gei_info(driver, url):
         pattern = '.*】(.*)'
         result = re.match(pattern, gei_info.item_name, flags=re.DOTALL)
         if result is not None:
-            gei_info.asin_code, gei_info.asin_name = chg_name_to_asin(
-                result.group(1))
+            gei_info.asin_code, gei_info.asin_name = chg_name_to_asin(driver,
+                                                                      result.group(1))
 
         try:
             gei_info.save()
@@ -577,15 +578,15 @@ def get_gei_info(driver, url):
             print(e)
 
 
-def chg_name_to_jan(name):
+def chg_name_to_jan(driver, name):
     print('chg_name_to_jan start')
     jancode = ''
     asin_name = ''
 
-    options = Options()
-    options.add_argument('--headless')
-    options.add_argument("--disable-blink-features=AutomationControlled")
-    driver = webdriver.Chrome(options=options)
+    # options = Options()
+    # options.add_argument('--headless')
+    # options.add_argument("--disable-blink-features=AutomationControlled")
+    # driver = webdriver.Chrome(options=options)
 
     url = 'https://antlion.xsrv.jp/'
     driver.get(url)
@@ -616,8 +617,7 @@ def chg_name_to_jan(name):
     except Exception as e:
         print(e)
 
-    driver.close()
-    time.sleep(3)
+    # driver.close()
 
     print('name jancode')
     print(name)
@@ -628,16 +628,16 @@ def chg_name_to_jan(name):
     return jancode, asin_name
 
 
-def chg_name_to_asin(name):
+def chg_name_to_asin(driver, name):
     print('chg_name_to_asin start')
     print(name)
     asin_code = ''
     asin_name = ''
 
-    options = Options()
-    options.add_argument('--headless')
-    options.add_argument("--disable-blink-features=AutomationControlled")
-    driver = webdriver.Chrome(options=options)
+    # options = Options()
+    # options.add_argument('--headless')
+    # options.add_argument("--disable-blink-features=AutomationControlled")
+    # driver = webdriver.Chrome(options=options)
 
     url = 'https://antlion.xsrv.jp/'
     driver.get(url)
@@ -666,8 +666,7 @@ def chg_name_to_asin(name):
     except Exception as e:
         print(e)
 
-    driver.close()
-    time.sleep(3)
+    # driver.close()
 
     print('name asin')
     print(name)
@@ -678,15 +677,15 @@ def chg_name_to_asin(name):
     return asin_code, asin_name
 
 
-def chg_jancode_to_asin(jancode):
+def chg_jancode_to_asin(driver, jancode):
     print('chg_jancode_to_asin start')
     asin_code = ''
     asin_name = ''
 
-    options = Options()
-    options.add_argument('--headless')
-    options.add_argument("--disable-blink-features=AutomationControlled")
-    driver = webdriver.Chrome(options=options)
+    # options = Options()
+    # options.add_argument('--headless')
+    # options.add_argument("--disable-blink-features=AutomationControlled")
+    # driver = webdriver.Chrome(options=options)
 
     url = 'https://antlion.xsrv.jp/'
     driver.get(url)
@@ -716,8 +715,7 @@ def chg_jancode_to_asin(jancode):
     except Exception as e:
         print(e)
 
-    driver.close()
-    time.sleep(3)
+    # driver.close()
 
     print('jancode asin')
     print(jancode)
@@ -729,8 +727,8 @@ def chg_jancode_to_asin(jancode):
 
 
 def index(request):
-    chg_name_to_asin(
-        '私の彼はエプロン男子')
+    # chg_name_to_asin(
+    #     '私の彼はエプロン男子')
     return HttpResponse('index')
 
 
