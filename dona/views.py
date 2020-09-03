@@ -178,6 +178,8 @@ def get_max_item(driver, month_url):
     print('get max item start')
     max_item = 0
     driver.get(month_url)
+    time.sleep(random.randint(5, 10))
+
     selector = 'div.rb-control__display-number'
     elements = driver.find_elements_by_css_selector(selector)
     for element in elements:
