@@ -47,6 +47,8 @@ class GetItemThread(threading.Thread):
         #     thread.start()
 
         rand_month_url = random.sample(list(month_url_dict.values()), 1)
+        # rand_month_url = random.sample(
+        #     list(month_url_dict.values()), len(month_url_dict.values()))
         print(rand_month_url)
         for month_url in rand_month_url:
             thread = threading.Thread(
@@ -335,19 +337,21 @@ def get_item_info(driver, item_info_url):
             if result is not None:
                 item_name = result.group(1)
 
-        item_info.asin_code, item_info.asin_name = chg_name_to_asin(driver,
-                                                                    item_name)
+        item_info.asin_code, item_info.asin_name, item_info.asin_price = chg_name_to_asin(driver,
+                                                                                          item_name)
         print('no name to asin code end')
         print(item_info.asin_code)
         print(item_info.asin_name)
+        print(item_info.asin_price)
     else:
         print('yes jan code')
         print(item_info.jan_code)
-        item_info.asin_code, item_info.asin_name = chg_jancode_to_asin(driver,
-                                                                       item_info.jan_code)
+        item_info.asin_code, item_info.asin_name, item_info.asin_price = chg_jancode_to_asin(driver,
+                                                                                             item_info.jan_code)
         print('yes jan to asin code')
         print(item_info.asin_code)
         print(item_info.asin_name)
+        print(item_info.asin_price)
         if item_info.asin_code == '':
             item_name = ''
             pattern = '.*】(.*)'
@@ -363,12 +367,13 @@ def get_item_info(driver, item_info_url):
                 if result is not None:
                     item_name = result.group(1)
 
-            item_info.asin_code, item_info.asin_name = chg_name_to_asin(driver,
-                                                                        item_name)
+            item_info.asin_code, item_info.asin_name, item_info.asin_price = chg_name_to_asin(driver,
+                                                                                              item_name)
 
             print('yes name to asin code')
             print(item_info.asin_code)
             print(item_info.asin_name)
+            print(item_info.asin_price)
 
     try:
         item_info.save()
@@ -586,8 +591,8 @@ def get_gei_info(driver, url):
         pattern = '.*】(.*)'
         result = re.match(pattern, gei_info.item_name, flags=re.DOTALL)
         if result is not None:
-            gei_info.asin_code, gei_info.asin_name = chg_name_to_asin(driver,
-                                                                      result.group(1))
+            gei_info.asin_code, gei_info.asin_name, item_info.asin_price = chg_name_to_asin(driver,
+                                                                                            result.group(1))
 
         try:
             gei_info.save()
@@ -597,61 +602,14 @@ def get_gei_info(driver, url):
             print(e)
 
 
-def chg_name_to_jan(driver, name):
-    print('chg_name_to_jan start')
-    jancode = ''
-    asin_name = ''
-
-    # options = Options()
-    # options.add_argument('--headless')
-    # options.add_argument("--disable-blink-features=AutomationControlled")
-    # driver = webdriver.Chrome(options=options)
-
-    url = 'https://antlion.xsrv.jp/'
-    driver.get(url)
-    print(url)
-    time.sleep(random.randint(5, 10))
-    selector = 'form#searchform input#s'
-    element = driver.find_element_by_css_selector(selector)
-    element.send_keys(name)
-    element.send_keys(Keys.ENTER)
-    time.sleep(random.randint(5, 10))
-
-    try:
-        selector = 'h4 a, li'
-        elements = driver.find_elements_by_css_selector(selector)
-        for element in elements:
-            print(element.text)
-            if element.get_attribute('href') is not None:
-                print(element.text)
-                asin_name = element.text
-            print(element.text)
-            if 'JAN' in element.text:
-                print(element.text)
-                pattern = '.* : (.*)'
-                result = re.match(pattern, element.text, flags=re.DOTALL)
-                if result is not None:
-                    jancode = result.group(1)
-                break
-    except Exception as e:
-        print(e)
-
-    # driver.close()
-
-    print('name jancode')
-    print(name)
-    print(jancode)
-    print(asin_name)
-
-    print('chg_name_to_jan end')
-    return jancode, asin_name
-
-
 def chg_name_to_asin(driver, name):
     print('chg_name_to_asin start')
     print(name)
     asin_code = ''
     asin_name = ''
+    asin_price = ''
+
+    is_hit = False
 
     # options = Options()
     # options.add_argument('--headless')
@@ -668,7 +626,7 @@ def chg_name_to_asin(driver, name):
     element.send_keys(Keys.ENTER)
     time.sleep(random.randint(5, 10))
     try:
-        selector = 'h4 a, li'
+        selector = 'article h4 a, article li, article div'
         elements = driver.find_elements_by_css_selector(selector)
         for element in elements:
             print(element.text)
@@ -681,7 +639,14 @@ def chg_name_to_asin(driver, name):
                 result = re.match(pattern, element.text, flags=re.DOTALL)
                 if result is not None:
                     asin_code = result.group(1)
-                break
+            if 'Amazon販売価格' in element.text:
+                print(element.text)
+                pattern = '.* : (.*)'
+                result = re.match(pattern, element.text, flags=re.DOTALL)
+                if result is not None:
+                    asin_price = result.group(1).replace(
+                        ',', '').replace('￥', '')
+                    break
     except Exception as e:
         print(e)
 
@@ -691,15 +656,19 @@ def chg_name_to_asin(driver, name):
     print(name)
     print(asin_code)
     print(asin_name)
+    print(asin_price)
 
     print('chg_name_to_asin end')
-    return asin_code, asin_name
+    return asin_code, asin_name, asin_price
 
 
 def chg_jancode_to_asin(driver, jancode):
     print('chg_jancode_to_asin start')
     asin_code = ''
     asin_name = ''
+    asin_price = ''
+
+    is_hit = False
 
     # options = Options()
     # options.add_argument('--headless')
@@ -717,7 +686,7 @@ def chg_jancode_to_asin(driver, jancode):
     time.sleep(random.randint(5, 10))
 
     try:
-        selector = 'h4 a, li'
+        selector = 'article h4 a, article li, article div'
         elements = driver.find_elements_by_css_selector(selector)
         for element in elements:
             print(element.text)
@@ -730,7 +699,14 @@ def chg_jancode_to_asin(driver, jancode):
                 result = re.match(pattern, element.text, flags=re.DOTALL)
                 if result is not None:
                     asin_code = result.group(1)
-                break
+            if 'Amazon販売価格' in element.text:
+                print(element.text)
+                pattern = '.* : (.*)'
+                result = re.match(pattern, element.text, flags=re.DOTALL)
+                if result is not None:
+                    asin_price = result.group(1).replace(
+                        ',', '').replace('￥', '')
+                    break
     except Exception as e:
         print(e)
 
@@ -740,9 +716,10 @@ def chg_jancode_to_asin(driver, jancode):
     print(jancode)
     print(asin_code)
     print(asin_name)
+    print(asin_price)
 
     print('chg_jancode_to_asin end')
-    return asin_code, asin_name
+    return asin_code, asin_name, asin_price
 
 
 def index(request):

@@ -20,6 +20,7 @@ class Item(models.Model):
     set_content = models.TextField()
     asin_code = models.TextField()
     asin_name = models.TextField()
+    asin_price = models.TextField()
 
 
 class Mono(models.Model):
@@ -38,3 +39,4 @@ class Gei(models.Model):
     jan_code = models.TextField()
     asin_code = models.TextField()
     asin_name = models.TextField()
+    asin_price = models.TextField()
