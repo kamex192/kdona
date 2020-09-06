@@ -20,6 +20,7 @@ import re
 import math
 
 import random
+import copy
 
 import csv
 import urllib
@@ -34,9 +35,9 @@ class GetItemThread(threading.Thread):
         options.add_argument("--disable-blink-features=AutomationControlled")
         driver = webdriver.Chrome(options=options)
 
-        month_url_dict = get_month_url(driver)
-        # month_url_dict = {'2020年5月': 'https://books.rakuten.co.jp/calendar/003/monthly/?tid=2020-05-01', '2020年6月': 'https://books.rakuten.co.jp/calendar/003/monthly/?tid=2020-06-01', '2020年7月': 'https://books.rakuten.co.jp/calendar/003/monthly/?tid=2020-07-01',
-        #                   '2020年8月': 'https://books.rakuten.co.jp/calendar/003/monthly/?tid=2020-08-01', '2020年9月': 'https://books.rakuten.co.jp/calendar/003/monthly/?tid=2020-09-01', '2020年10月': 'https://books.rakuten.co.jp/calendar/003/monthly/?tid=2020-10-01', '2020年11月': 'https://books.rakuten.co.jp/calendar/003/monthly/?tid=2020-11-01'}
+        # month_url_dict = get_month_url(driver)
+        month_url_dict = {'2020年5月': 'https://books.rakuten.co.jp/calendar/003/monthly/?tid=2020-05-01', '2020年6月': 'https://books.rakuten.co.jp/calendar/003/monthly/?tid=2020-06-01', '2020年7月': 'https://books.rakuten.co.jp/calendar/003/monthly/?tid=2020-07-01',
+                          '2020年8月': 'https://books.rakuten.co.jp/calendar/003/monthly/?tid=2020-08-01', '2020年9月': 'https://books.rakuten.co.jp/calendar/003/monthly/?tid=2020-09-01', '2020年10月': 'https://books.rakuten.co.jp/calendar/003/monthly/?tid=2020-10-01', '2020年11月': 'https://books.rakuten.co.jp/calendar/003/monthly/?tid=2020-11-01'}
         driver.close()
         time.sleep(3)
 
@@ -46,9 +47,9 @@ class GetItemThread(threading.Thread):
         #         target=get_items_info, args=([month_url]))
         #     thread.start()
 
-        rand_month_url = random.sample(list(month_url_dict.values()), 1)
-        # rand_month_url = random.sample(
-        #     list(month_url_dict.values()), len(month_url_dict.values()))
+        # rand_month_url = random.sample(list(month_url_dict.values()), 1)
+        rand_month_url = random.sample(
+            list(month_url_dict.values()), len(month_url_dict.values()))
         print(rand_month_url)
         for month_url in rand_month_url:
             thread = threading.Thread(
@@ -324,11 +325,11 @@ def get_item_info(driver, item_info_url):
         print(item_info.jan_code)
         print(item_info.item_name)
         item_name = ''
-        pattern = '.*】(.*)'
+        pattern = '.*?】(.*)'
         result = re.match(pattern, item_info.item_name)
         if result is not None:
-            item_name = result.group(1)
-        print('item_name .*】')
+            item_name = result.group(1).replace('【', ' ').replace('】', ' ')
+        print('item_name .*?】')
         print(item_name)
         if item_name == '':
             print('item_name (.*)')
@@ -354,11 +355,11 @@ def get_item_info(driver, item_info_url):
         print(item_info.asin_price)
         if item_info.asin_code == '':
             item_name = ''
-            pattern = '.*】(.*)'
+            pattern = '.*?】(.*)'
             result = re.match(pattern, item_info.item_name)
             if result is not None:
-                item_name = result.group(1)
-            print('item_name .*】')
+                item_name = result.group(1).replace('【', ' ').replace('】', ' ')
+            print('item_name .*?】')
             print(item_name)
             if item_name == '':
                 print('item_name (.*)')
@@ -522,6 +523,7 @@ class GetGeiThread(threading.Thread):
 
         url = 'http://blog.livedoor.jp/sedori_nitijyo/'
         get_gei_infos(driver, url)
+        driver.close()
 
 
 def get_gei_infos(driver, url):
@@ -571,6 +573,7 @@ def get_gei_info(driver, url):
     driver.get(url)
     selector = 'div.article-outer'
     elements = driver.find_elements_by_css_selector(selector)
+    gei_info_list = []
     for element in elements:
         gei_info = Gei()
         selector = 'abbr.updated'
@@ -588,12 +591,18 @@ def get_gei_info(driver, url):
         gei_info.item_url = item_url
         print(item_url)
 
-        pattern = '.*】(.*)'
-        result = re.match(pattern, gei_info.item_name, flags=re.DOTALL)
-        if result is not None:
-            gei_info.asin_code, gei_info.asin_name, item_info.asin_price = chg_name_to_asin(driver,
-                                                                                            result.group(1))
+        gei_info.recommended_word = parse_recommended_word(gei_info.item_name)
 
+        gei_info_list.append(copy.deepcopy(gei_info))
+
+    for gei_info in gei_info_list:
+        pattern = '.*?】(.*)'
+        result = re.match(pattern, gei_info.item_name, flags=re.DOTALL)
+        print('get asin gei_info.item_name')
+        print(gei_info.item_name)
+        if result is not None:
+            gei_info.asin_code, gei_info.asin_name, gei_info.asin_price = chg_name_to_asin(driver,
+                                                                                           result.group(1).replace('【', ' ').replace('】', ' '))
         try:
             gei_info.save()
             print('gei_info.save')
@@ -602,14 +611,47 @@ def get_gei_info(driver, url):
             print(e)
 
 
+def parse_recommended_word(name):
+    recommended_word = ''
+    if '人気' in name:
+        recommended_word = '人気'
+    if '前作' in name:
+        recommended_word = '前作'
+    if '注意' in name:
+        recommended_word = '注意'
+    if '完売' in name:
+        recommended_word = '完売'
+    if '復活' in name:
+        recommended_word = '復活'
+    if '1位' in name:
+        recommended_word = '1位'
+    if '即完' in name:
+        recommended_word = '即完'
+    if 'やばい' in name:
+        recommended_word = 'やばい'
+    if '大化け' in name:
+        recommended_word = '大化け'
+    if '寝かし' in name:
+        recommended_word = '寝かし'
+    if '限定' in name:
+        recommended_word = '限定'
+    if '初回限定' in name:
+        recommended_word = '初回限定'
+    if '超' in name:
+        recommended_word = '超'
+    if '再販' in name:
+        recommended_word = '再販'
+    if '抽選' in name:
+        recommended_word = '抽選'
+    return recommended_word
+
+
 def chg_name_to_asin(driver, name):
     print('chg_name_to_asin start')
     print(name)
     asin_code = ''
     asin_name = ''
     asin_price = ''
-
-    is_hit = False
 
     # options = Options()
     # options.add_argument('--headless')
@@ -667,8 +709,6 @@ def chg_jancode_to_asin(driver, jancode):
     asin_code = ''
     asin_name = ''
     asin_price = ''
-
-    is_hit = False
 
     # options = Options()
     # options.add_argument('--headless')

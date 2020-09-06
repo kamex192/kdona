@@ -37,6 +37,7 @@ class Gei(models.Model):
     item_url = models.TextField(unique=True)
     post_date = models.DateTimeField()
     jan_code = models.TextField()
+    recommended_word = models.TextField()
     asin_code = models.TextField()
     asin_name = models.TextField()
     asin_price = models.TextField()
