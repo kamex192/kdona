@@ -12,6 +12,9 @@ from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.common.action_chains import ActionChains
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+
 
 import threading
 import time
@@ -338,8 +341,8 @@ def get_item_info(driver, item_info_url):
             if result is not None:
                 item_name = result.group(1)
 
-        item_info.asin_code, item_info.asin_name, item_info.asin_price = chg_name_to_asin(driver,
-                                                                                          item_name)
+        _, item_info.asin_code, item_info.asin_name, item_info.asin_price = chg_name_to_asin(driver,
+                                                                                             item_name)
         print('no name to asin code end')
         print(item_info.asin_code)
         print(item_info.asin_name)
@@ -347,8 +350,8 @@ def get_item_info(driver, item_info_url):
     else:
         print('yes jan code')
         print(item_info.jan_code)
-        item_info.asin_code, item_info.asin_name, item_info.asin_price = chg_jancode_to_asin(driver,
-                                                                                             item_info.jan_code)
+        _, item_info.asin_code, item_info.asin_name, item_info.asin_price = chg_jancode_to_asin(driver,
+                                                                                                item_info.jan_code)
         print('yes jan to asin code')
         print(item_info.asin_code)
         print(item_info.asin_name)
@@ -368,8 +371,8 @@ def get_item_info(driver, item_info_url):
                 if result is not None:
                     item_name = result.group(1)
 
-            item_info.asin_code, item_info.asin_name, item_info.asin_price = chg_name_to_asin(driver,
-                                                                                              item_name)
+            _, item_info.asin_code, item_info.asin_name, item_info.asin_price = chg_name_to_asin(driver,
+                                                                                                 item_name)
 
             print('yes name to asin code')
             print(item_info.asin_code)
@@ -591,6 +594,17 @@ def get_gei_info(driver, url):
         gei_info.item_url = item_url
         print(item_url)
 
+        selector = 'div.article-body-inner'
+        body_inner_element = element.find_element_by_css_selector(selector)
+        print('body_inner_element')
+        print(body_inner_element.text)
+        pattern = '[\s\S]*￥(.*)'
+        result = re.match(pattern, body_inner_element.text)
+        if result is not None:
+            gei_info.item_price = re.sub("[^0-9]+", "", result.group(1))
+            print('inner price')
+            print(gei_info.item_price)
+
         gei_info.recommended_word = parse_recommended_word(gei_info.item_name)
 
         gei_info_list.append(copy.deepcopy(gei_info))
@@ -601,8 +615,21 @@ def get_gei_info(driver, url):
         print('get asin gei_info.item_name')
         print(gei_info.item_name)
         if result is not None:
-            gei_info.asin_code, gei_info.asin_name, gei_info.asin_price = chg_name_to_asin(driver,
-                                                                                           result.group(1).replace('【', ' ').replace('】', ' '))
+            gei_info.jan_code, gei_info.asin_code, gei_info.asin_name, gei_info.asin_price = chg_name_to_asin(driver,
+                                                                                                              result.group(1).replace('【', ' ').replace('】', ' '))
+            if gei_info.jan_code == '':
+                if gei_info.asin_name == '':
+                    print('fetch yahoo price by name')
+                    gei_info.yahoo_shop, gei_info.yahoo_name, gei_info.yahoo_url, gei_info.yahoo_price, gei_info.yahoo_stock = fetch_yahoo_price(
+                        driver, result.group(1).replace('【', ' ').replace('】', ' '))
+                else:
+                    print('fetch yahoo price by asin name')
+                    gei_info.yahoo_shop, gei_info.yahoo_name, gei_info.yahoo_url, gei_info.yahoo_price, gei_info.yahoo_stock = fetch_yahoo_price(
+                        driver, gei_info.asin_name)
+            else:
+                print('fetch yahoo price by jan code')
+                gei_info.yahoo_shop, gei_info.yahoo_name, gei_info.yahoo_url, gei_info.yahoo_price, gei_info.yahoo_stock = fetch_yahoo_price(
+                    driver, gei_info.jan_code)
         try:
             gei_info.save()
             print('gei_info.save')
@@ -649,6 +676,7 @@ def parse_recommended_word(name):
 def chg_name_to_asin(driver, name):
     print('chg_name_to_asin start')
     print(name)
+    jan_code = ''
     asin_code = ''
     asin_name = ''
     asin_price = ''
@@ -672,6 +700,12 @@ def chg_name_to_asin(driver, name):
         elements = driver.find_elements_by_css_selector(selector)
         for element in elements:
             print(element.text)
+            if 'JAN' in element.text:
+                print(element.text)
+                pattern = '.* : (.*)'
+                result = re.match(pattern, element.text, flags=re.DOTALL)
+                if result is not None:
+                    jan_code = result.group(1)
             if element.get_attribute('href') is not None:
                 print(element.text)
                 asin_name = element.text
@@ -696,16 +730,18 @@ def chg_name_to_asin(driver, name):
 
     print('name asin')
     print(name)
+    print(jan_code)
     print(asin_code)
     print(asin_name)
     print(asin_price)
 
     print('chg_name_to_asin end')
-    return asin_code, asin_name, asin_price
+    return jan_code, asin_code, asin_name, asin_price
 
 
 def chg_jancode_to_asin(driver, jancode):
     print('chg_jancode_to_asin start')
+    jan_code = ''
     asin_code = ''
     asin_name = ''
     asin_price = ''
@@ -730,6 +766,12 @@ def chg_jancode_to_asin(driver, jancode):
         elements = driver.find_elements_by_css_selector(selector)
         for element in elements:
             print(element.text)
+            if 'JAN' in element.text:
+                print(element.text)
+                pattern = '.* : (.*)'
+                result = re.match(pattern, element.text, flags=re.DOTALL)
+                if result is not None:
+                    jan_code = result.group(1)
             if element.get_attribute('href') is not None:
                 print(element.text)
                 asin_name = element.text
@@ -754,17 +796,196 @@ def chg_jancode_to_asin(driver, jancode):
 
     print('jancode asin')
     print(jancode)
+    print(jan_code)
     print(asin_code)
     print(asin_name)
     print(asin_price)
 
     print('chg_jancode_to_asin end')
-    return asin_code, asin_name, asin_price
+    return jan_code, asin_code, asin_name, asin_price
+
+
+def fetch_yahoo_price(driver, jan_code):
+    print('fetch_yahoo_price start')
+    print(jan_code)
+    yahoo_shop = ''
+    yahoo_name = ''
+    yahoo_url = ''
+    yahoo_price = ''
+    yahoo_stock = ''
+    yahoo_data_list = []
+    # options = Options()
+    # options.add_argument('--headless')
+    # options.add_argument("--disable-blink-features=AutomationControlled")
+    # driver = webdriver.Chrome(options=options)
+
+    url = 'https://shopping.yahoo.co.jp/'
+    driver.get(url)
+    print(url)
+    time.sleep(random.randint(5, 10))
+    wait = WebDriverWait(driver, 10)
+
+    try:
+        selector = 'input#ss_yschsp'
+        element = wait.until(EC.presence_of_element_located(
+            (By.CSS_SELECTOR, selector)))
+        element.send_keys(jan_code)
+        element.send_keys(Keys.ENTER)
+        print('keys enter')
+    except Exception as e:
+        print(e)
+
+    time.sleep(random.randint(10, 15))
+
+    print('check search result')
+
+    try:
+        selector = 'div#h1link'
+        element = wait.until(EC.presence_of_element_located(
+            (By.CSS_SELECTOR, selector)))
+        print(element.text)
+        if '（0件）' in element.text:
+            print(element.text)
+            return yahoo_shop, yahoo_name, yahoo_url, yahoo_price, yahoo_stock
+    except Exception as e:
+        print(e)
+
+    selector = 'span._14BqurpMMZHv span'
+    element = driver.find_element_by_css_selector(selector)
+    if '在庫ありのみ' in element.text:
+        print(element.text)
+        actions = ActionChains(driver)
+        actions.move_to_element(element).perform()
+        element.click()
+
+    time.sleep(random.randint(10, 15))
+
+    selector = 'div#itmcond ul a'
+    elements = driver.find_elements_by_css_selector(selector)
+    for element in elements:
+        if '新品' in element.text:
+            print(element.text)
+            url = element.get_attribute('href')
+            print(url)
+            element.send_keys(Keys.ENTER)
+            break
+
+    time.sleep(random.randint(10, 15))
+
+    selector = 'ul#sort li a'
+    elements = driver.find_elements_by_css_selector(selector)
+    for element in elements:
+        if '価格が安い順' in element.text:
+            print(element.text)
+            actions = ActionChains(driver)
+            actions.move_to_element(element).perform()
+            element.click()
+            break
+
+    time.sleep(random.randint(10, 15))
+
+    selector = 'li#searchResults1 div ul li'
+    elements = driver.find_elements_by_css_selector(selector)
+    for element in elements:
+        print(element.text)
+        try:
+            textlist = element.text.splitlines()
+            for text in textlist:
+                pattern = '(.*)円'
+                result = re.match(pattern, text)
+                if result is not None:
+                    print(text)
+                    yahoo_price = re.sub("[^0-9]+", "", result.group(1))
+                    print('yahoo_price:' + yahoo_price)
+            break
+        except Exception as e:
+            print(e)
+        print('roop end')
+
+    selector = 'div#prcrange form div'
+    prcrange_element = driver.find_element_by_css_selector(selector)
+    print(prcrange_element.text)
+    # selector = 'input.vnA2X4dIGdZJ'
+    selector = 'div input + span + input'
+    max_prc_element = prcrange_element.find_element_by_css_selector(selector)
+    max_prc_element.send_keys(yahoo_price)
+    max_prc_element.send_keys(Keys.ENTER)
+
+    time.sleep(random.randint(10, 15))
+
+    selector = 'li#searchResults1 div ul li'
+    elements = driver.find_elements_by_css_selector(selector)
+    for element in elements:
+        print(element.text)
+        try:
+            selector = 'div div p a'
+            url_element = element.find_element_by_css_selector(selector)
+            yahoo_url = url_element.get_attribute('href')
+            print('yahoo_url:' + yahoo_url)
+
+            selector = 'div div p a'
+            name_element = element.find_element_by_css_selector(selector)
+            yahoo_name = name_element.text
+            print('yahoo_name:' + yahoo_name)
+
+            selector = 'div div div a div p'
+            shop_element = element.find_element_by_css_selector(selector)
+            yahoo_shop = shop_element.text
+            print('yahoo_shop:' + yahoo_shop)
+
+            if '在庫切れ' in element.text:
+                yahoo_stock = '在庫切れ'
+
+            textlist = element.text.splitlines()
+            for text in textlist:
+                pattern = '(.*)円'
+                result = re.match(pattern, text)
+                if result is not None:
+                    print(text)
+                    yahoo_price = re.sub("[^0-9]+", "", result.group(1))
+                    print('yahoo_price:' + yahoo_price)
+
+            yahoo_data_list.append({
+                'yahoo_url': yahoo_url, 'yahoo_shop': yahoo_shop, 'yahoo_name': yahoo_name, 'yahoo_price': yahoo_price, 'yahoo_stock': yahoo_stock})
+
+        except Exception as e:
+            print(e)
+        print('roop end')
+
+    for yahoo_data in yahoo_data_list:
+        print(yahoo_data)
+
+    yahoo_data_list_sorted = sorted(
+        yahoo_data_list, key=lambda x: x['yahoo_price'])
+    for yahoo_data in yahoo_data_list_sorted:
+        print(yahoo_data)
+
+    yahoo_shop = yahoo_data_list_sorted[0]['yahoo_shop']
+    yahoo_name = yahoo_data_list_sorted[0]['yahoo_name']
+    yahoo_url = yahoo_data_list_sorted[0]['yahoo_url']
+    yahoo_price = yahoo_data_list_sorted[0]['yahoo_price']
+    yahoo_stock = yahoo_data_list_sorted[0]['yahoo_stock']
+
+    print('name asin')
+    print(jan_code)
+    print(yahoo_shop)
+    print(yahoo_name)
+    print(yahoo_url)
+    print(yahoo_price)
+    print(yahoo_stock)
+
+    print('fetch_yahoo_price end')
+    return yahoo_shop, yahoo_name, yahoo_url, yahoo_price, yahoo_stock
 
 
 def index(request):
-    # chg_name_to_asin(
-    #     '私の彼はエプロン男子')
+    options = Options()
+    options.add_argument('--headless')
+    options.add_argument("--disable-blink-features=AutomationControlled")
+    driver = webdriver.Chrome(options=options)
+
+    fetch_yahoo_price(driver, 'FINAL FANTASY XIV　マイスタークオリティ　フィギュア　＜オメガ＞')
+    driver.close()
     return HttpResponse('index')
 
 
