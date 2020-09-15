@@ -151,7 +151,12 @@ def get_items_info(month_url):
     max_page = math.ceil((int(max_item) / 30))
     print(max_page)
 
-    for page in range(max_page):
+    page_list = list(range(int(max_page)))
+    rand_page_list = random.sample(page_list, len(page_list))
+    print(rand_page_list)
+
+    for page in rand_page_list:
+        print('page:' + str(page))
         month_url_page = month_url + '&p=' + str(page+1) + '#rclist'
         print(month_url_page)
         tmp_info_url_set = get_items_info_url_set(driver, month_url_page)
@@ -538,7 +543,12 @@ def get_gei_infos(driver, url):
     max_page = get_max_gei_page(driver)
     print(max_page)
 
-    for page in range(int(max_page)):
+    page_list = list(range(int(max_page)))
+    rand_page_list = random.sample(page_list, len(page_list))
+    print(rand_page_list)
+
+    for page in rand_page_list:
+        print('page:' + str(page))
         url_page = url + '?p=' + str(page+1)
         print(url_page)
         get_gei_info(driver, url_page)
@@ -819,8 +829,22 @@ def fetch_yahoo_price(driver, jan_code):
     # options.add_argument("--disable-blink-features=AutomationControlled")
     # driver = webdriver.Chrome(options=options)
 
-    url = 'https://shopping.yahoo.co.jp/'
-    driver.get(url)
+    driver.get('https://www.google.com')
+    element = driver.find_element(By.CSS_SELECTOR, '[name="q"]')
+    element.send_keys("ヤフーショッピング")
+    element.send_keys(Keys.ENTER)
+    selector = 'a'
+    elements = driver.find_elements_by_css_selector(selector)
+    for element in elements:
+        print(element.text)
+        if 'Yahoo!ショッピング' in element.text:
+            url = element.get_attribute('href')
+            print(url)
+            element.send_keys(Keys.ENTER)
+            break
+
+    # url = 'https://shopping.yahoo.co.jp/'
+    # driver.get(url)
     print(url)
     time.sleep(random.randint(5, 10))
     wait = WebDriverWait(driver, 10)
@@ -1016,6 +1040,7 @@ def get_gei(request):
     print('active_count:' + str(threading.active_count()))
     print('enumerate:' + str(threading.enumerate()))
     if 'GetGeiThread' not in str(threading.enumerate()):
+        print('GetGeiThread start')
         t = GetGeiThread()
         t.start()
     print('get_gei end')
