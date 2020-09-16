@@ -527,18 +527,30 @@ class GetGeiThread(threading.Thread):
         options = Options()
         options.add_argument('--headless')
         options.add_argument("--disable-blink-features=AutomationControlled")
+        options.add_argument(
+            f'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/79.0.3945.117 Safari/537.36 Edg/79.0.309.65')
         driver = webdriver.Chrome(options=options)
 
-        url = 'http://blog.livedoor.jp/sedori_nitijyo/'
-        get_gei_infos(driver, url)
+        get_gei_infos(driver)
         driver.close()
 
 
-def get_gei_infos(driver, url):
+def get_gei_infos(driver):
     print('get_gei_infos start')
-    print(url)
 
-    driver.get(url)
+    driver.get('https://www.google.com')
+    element = driver.find_element(By.CSS_SELECTOR, '[name="q"]')
+    element.send_keys("芸は身を助ける 転売")
+    element.send_keys(Keys.ENTER)
+    selector = 'a'
+    elements = driver.find_elements_by_css_selector(selector)
+    for element in elements:
+        print(element.text)
+        if '芸は身を助ける。 - livedoor Blog' in element.text:
+            url = element.get_attribute('href')
+            print(url)
+            element.send_keys(Keys.ENTER)
+            break
 
     max_page = get_max_gei_page(driver)
     print(max_page)
@@ -874,86 +886,102 @@ def fetch_yahoo_price(driver, jan_code):
     except Exception as e:
         print(e)
 
-    selector = 'span._14BqurpMMZHv span'
-    element = driver.find_element_by_css_selector(selector)
-    if '在庫ありのみ' in element.text:
-        print(element.text)
-        actions = ActionChains(driver)
-        actions.move_to_element(element).perform()
-        element.click()
-
-    time.sleep(random.randint(10, 15))
-
-    selector = 'div#itmcond ul a'
-    elements = driver.find_elements_by_css_selector(selector)
-    for element in elements:
-        if '新品' in element.text:
-            print(element.text)
-            url = element.get_attribute('href')
-            print(url)
-            element.send_keys(Keys.ENTER)
-            break
-
-    time.sleep(random.randint(10, 15))
-
-    selector = 'ul#sort li a'
-    elements = driver.find_elements_by_css_selector(selector)
-    for element in elements:
-        if '価格が安い順' in element.text:
+    try:
+        selector = 'span._14BqurpMMZHv span'
+        element = wait.until(EC.presence_of_element_located(
+            (By.CSS_SELECTOR, selector)))
+        if '在庫ありのみ' in element.text:
             print(element.text)
             actions = ActionChains(driver)
             actions.move_to_element(element).perform()
             element.click()
-            break
+    except Exception as e:
+        print(e)
 
     time.sleep(random.randint(10, 15))
 
-    selector = 'li#searchResults1 div ul li'
-    elements = driver.find_elements_by_css_selector(selector)
-    for element in elements:
-        print(element.text)
-        try:
-            textlist = element.text.splitlines()
-            for text in textlist:
-                pattern = '(.*)円'
-                result = re.match(pattern, text)
-                if result is not None:
-                    print(text)
-                    yahoo_price = re.sub("[^0-9]+", "", result.group(1))
-                    print('yahoo_price:' + yahoo_price)
-            break
-        except Exception as e:
-            print(e)
-        print('roop end')
+    try:
+        selector = 'div#itmcond ul a'
+        elements = wait.until(EC.presence_of_all_elements_located(
+            (By.CSS_SELECTOR, selector)))
+        for element in elements:
+            if '新品' in element.text:
+                print(element.text)
+                url = element.get_attribute('href')
+                print(url)
+                element.send_keys(Keys.ENTER)
+                break
+
+        time.sleep(random.randint(10, 15))
+
+        selector = 'ul#sort li a'
+        elements = wait.until(EC.presence_of_all_elements_located(
+            (By.CSS_SELECTOR, selector)))
+        for element in elements:
+            if '価格が安い順' in element.text:
+                print(element.text)
+                actions = ActionChains(driver)
+                actions.move_to_element(element).perform()
+                element.click()
+                break
+
+        time.sleep(random.randint(10, 15))
+
+        selector = 'li#searchResults1 div ul li'
+        elements = wait.until(EC.presence_of_all_elements_located(
+            (By.CSS_SELECTOR, selector)))
+        for element in elements:
+            print(element.text)
+            try:
+                textlist = element.text.splitlines()
+                for text in textlist:
+                    pattern = '(.*)円'
+                    result = re.match(pattern, text)
+                    if result is not None:
+                        print(text)
+                        yahoo_price = re.sub("[^0-9]+", "", result.group(1))
+                        print('yahoo_price:' + yahoo_price)
+                break
+            except Exception as e:
+                print(e)
+            print('roop end')
+    except Exception as e:
+        print(e)
 
     selector = 'div#prcrange form div'
-    prcrange_element = driver.find_element_by_css_selector(selector)
+    prcrange_element = wait.until(EC.presence_of_element_located(
+        (By.CSS_SELECTOR, selector)))
     print(prcrange_element.text)
     # selector = 'input.vnA2X4dIGdZJ'
     selector = 'div input + span + input'
-    max_prc_element = prcrange_element.find_element_by_css_selector(selector)
+    max_prc_element = wait.until(EC.presence_of_element_located(
+        (By.CSS_SELECTOR, selector)))
     max_prc_element.send_keys(yahoo_price)
     max_prc_element.send_keys(Keys.ENTER)
 
     time.sleep(random.randint(10, 15))
 
     selector = 'li#searchResults1 div ul li'
-    elements = driver.find_elements_by_css_selector(selector)
+    elements = wait.until(EC.presence_of_all_elements_located(
+        (By.CSS_SELECTOR, selector)))
     for element in elements:
         print(element.text)
         try:
             selector = 'div div p a'
-            url_element = element.find_element_by_css_selector(selector)
+            url_element = wait.until(EC.presence_of_element_located(
+                (By.CSS_SELECTOR, selector)))
             yahoo_url = url_element.get_attribute('href')
             print('yahoo_url:' + yahoo_url)
 
             selector = 'div div p a'
-            name_element = element.find_element_by_css_selector(selector)
+            name_element = wait.until(EC.presence_of_element_located(
+                (By.CSS_SELECTOR, selector)))
             yahoo_name = name_element.text
             print('yahoo_name:' + yahoo_name)
 
             selector = 'div div div a div p'
-            shop_element = element.find_element_by_css_selector(selector)
+            shop_element = wait.until(EC.presence_of_element_located(
+                (By.CSS_SELECTOR, selector)))
             yahoo_shop = shop_element.text
             print('yahoo_shop:' + yahoo_shop)
 
