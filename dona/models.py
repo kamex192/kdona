@@ -1,11 +1,11 @@
 from django.db import models
 
 
-class Item(models.Model):
-    item_name = models.TextField()
-    item_url = models.TextField(unique=True)
-    item_price = models.TextField()
-    release_date = models.DateTimeField()
+class Rakuten_books(models.Model):
+    name = models.TextField()
+    url = models.TextField(unique=True)
+    price = models.TextField()
+    release_date = models.TextField()
     artist = models.TextField()
     director = models.TextField()
     related_works = models.TextField()
@@ -18,32 +18,54 @@ class Item(models.Model):
     jan_code = models.TextField()
     in_store_code = models.TextField()
     set_content = models.TextField()
-    asin_code = models.TextField()
-    asin_name = models.TextField()
-    asin_price = models.TextField()
 
 
-class Mono(models.Model):
-    item_name = models.TextField()
-    item_url = models.TextField(unique=True)
-    shop_name = models.TextField()
-    item_price = models.TextField()
-    jan_code = models.TextField()
-    asin_code = models.TextField()
+class Yahoo(models.Model):
+    search_name = models.TextField(unique=True)
+    yahoo_shop = models.TextField()
+    yahoo_name = models.TextField()
+    url = models.TextField()
+    yahoo_price = models.TextField()
+    yahoo_stock = models.TextField()
 
 
 class Gei(models.Model):
-    item_name = models.TextField()
-    item_url = models.TextField(unique=True)
-    item_price = models.TextField(unique=True)
-    post_date = models.DateTimeField()
+    name = models.TextField()
+    url = models.TextField(unique=True)
+    price = models.TextField()
+    post_date = models.TextField()
     jan_code = models.TextField()
     recommended_word = models.TextField()
+
+
+class Mono(models.Model):
+    search_name = models.TextField(unique=True)
+    name = models.TextField()
+    url = models.TextField()
+    shop = models.TextField()
+    price = models.TextField()
+    list_price = models.TextField()
+    release_date = models.TextField()
+    maker = models.TextField()
+    jan_code = models.TextField()
     asin_code = models.TextField()
-    asin_name = models.TextField()
-    asin_price = models.TextField()
-    yahoo_shop = models.TextField()
-    yahoo_name = models.TextField()
-    yahoo_url = models.TextField()
-    yahoo_price = models.TextField()
-    yahoo_stock = models.TextField()
+
+
+class Antlion(models.Model):
+    search_name = models.TextField(unique=True)
+    item_name = models.TextField()
+    url = models.TextField()
+    jan_code = models.TextField()
+    isbn10_code = models.TextField()
+    category = models.TextField()
+    product_type = models.TextField()
+    maker = models.TextField()
+    distributor = models.TextField()
+    manufacturer_part_number = models.TextField()
+    model_name = models.TextField()
+    color = models.TextField()
+    size = models.TextField()
+    release_date = models.TextField()
+    asin_code = models.TextField()
+    amazon_stock = models.TextField()
+    amazon_price = models.TextField()
