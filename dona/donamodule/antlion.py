@@ -1,5 +1,6 @@
 from . import common
 from dona.models import Antlion
+from dona.models import Gei
 
 import chromedriver_binary
 
@@ -34,9 +35,16 @@ class GetAntlionThread(threading.Thread):
         site = 'JANコード検索できる'
         common.move_toppage_from_google(driver, site)
 
+        gei_obj = Gei.objects.all()
+        gei_obj_rand = random.sample(list(gei_obj), len(gei_obj))
+        for gei in gei_obj_rand:
+            search_name = gei.name
+            print(search_name)
+            search_item(driver, search_name)
+
         # アイテム検索
-        search_name = '4549660409045'
-        search_item(driver, search_name)
+        # search_name = '4549660409045'
+        # search_item(driver, search_name)
 
         driver.close()
         print('GetAntlionThread end')
@@ -47,6 +55,15 @@ def search_item(driver, search_name):
     print(search_name)
     antlion = Antlion()
     antlion.search_name = search_name
+
+    pattern = '.*?】(.*)'
+    result = re.match(pattern, search_name, flags=re.DOTALL)
+    if result is not None:
+        search_name = result.group(1).replace(
+            '【', ' ').replace('】', ' ')
+
+    print(search_name)
+    antlion.search_name_fix = search_name
 
     wait = WebDriverWait(driver, 30)
     selector = 'input#s'
@@ -177,6 +194,6 @@ def search_item(driver, search_name):
 def output_csv():
     print('output_csv start')
     response = common.output_csv(
-        'item', Antlion._meta, Antlion.objects.all())
+        'Antlion', Antlion._meta, Antlion.objects.all())
     print('output_csv end')
     return response

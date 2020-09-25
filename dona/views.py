@@ -359,6 +359,31 @@ def output_item_mono_gei(request):
     return response
 
 
+def output_gei_antlion(request):
+    print('output_gei_antlion start')
+    response = HttpResponse(content_type='text/csv; charset=UTF-8')
+    filename = urllib.parse.quote((u'gei_antlion.csv').encode("utf8"))
+    response['Content-Disposition'] = 'attachment; filename*=UTF-8\'\'{}'.format(
+        filename)
+    writer = csv.writer(response)
+
+    cursor = connection.cursor()
+    # cursor.execute(
+    #     "SELECT * FROM dona_Rakuten_books LEFT OUTER JOIN dona_Mono ON dona_Rakuten_books.jan_code=dona_Mono.jan_code LEFT OUTER JOIN dona_Gei ON dona_Mono.item_name Like '%' || dona_Rakuten_books.item_name || '%'")
+    # cursor.execute(
+    #     "SELECT * FROM dona_Gei LEFT JOIN dona_Antlion ON dona_Gei.name Like '%' || dona_Antlion.search_name")
+    cursor.execute(
+        "SELECT * FROM dona_Gei LEFT JOIN dona_Antlion ON dona_Gei.name = dona_Antlion.search_name")
+    output_gei_antlion_object = cursor.fetchall()
+    print('len(cursor)')
+    print(len(output_gei_antlion_object))
+
+    for output_gei_antlion in output_gei_antlion_object:
+        writer.writerow([*output_gei_antlion])
+
+    return response
+
+
 def check(request):
     # ドライバ初期化
     driver = common.init_driver()

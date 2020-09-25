@@ -22,6 +22,7 @@ class Rakuten_books(models.Model):
 
 class Yahoo(models.Model):
     search_name = models.TextField(unique=True)
+    search_name_fix = models.TextField(unique=True)
     yahoo_shop = models.TextField()
     yahoo_name = models.TextField()
     url = models.TextField()
@@ -40,6 +41,7 @@ class Gei(models.Model):
 
 class Mono(models.Model):
     search_name = models.TextField(unique=True)
+    search_name_fix = models.TextField(unique=True)
     name = models.TextField()
     url = models.TextField()
     shop = models.TextField()
@@ -53,6 +55,7 @@ class Mono(models.Model):
 
 class Antlion(models.Model):
     search_name = models.TextField(unique=True)
+    search_name_fix = models.TextField(unique=True)
     item_name = models.TextField()
     url = models.TextField()
     jan_code = models.TextField()

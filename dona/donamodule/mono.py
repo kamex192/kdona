@@ -38,13 +38,6 @@ class GetMonoThread(threading.Thread):
         gei_obj_rand = random.sample(list(gei_obj), len(gei_obj))
         for gei in gei_obj_rand:
             search_name = gei.name
-
-            pattern = '.*?】(.*)'
-            result = re.match(pattern, search_name, flags=re.DOTALL)
-            if result is not None:
-                search_name = result.group(1).replace(
-                    '【', ' ').replace('】', ' ')
-
             print(search_name)
             search_item(driver, search_name)
 
@@ -55,8 +48,19 @@ class GetMonoThread(threading.Thread):
 def search_item(driver, search_name):
     print('search_item start')
     print(search_name)
+    mono = Mono()
+    mono.search_name = search_name
 
     # time.sleep(random.randint(5, 10))
+
+    pattern = '.*?】(.*)'
+    result = re.match(pattern, search_name, flags=re.DOTALL)
+    if result is not None:
+        search_name = result.group(1).replace(
+            '【', ' ').replace('】', ' ')
+
+    print(search_name)
+    mono.search_name_fix = search_name
 
     wait = WebDriverWait(driver, 30)
     selector = 'form.search_form input'
@@ -83,8 +87,6 @@ def search_item(driver, search_name):
         element.send_keys(search_name)
         element.send_keys(Keys.ENTER)
 
-    mono = Mono()
-    mono.search_name = search_name
     mono.url = driver.current_url
 
     if 'item?' in url:
