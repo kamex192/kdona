@@ -4,6 +4,7 @@ from .models import Rakuten_books
 from .models import Yahoo
 from .models import Mono
 from .models import Gei
+from .models import Penguin
 from .models import Antlion
 
 admin.site.register(Rakuten_books)

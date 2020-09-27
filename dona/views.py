@@ -3,6 +3,7 @@ from .donamodule import antlion
 from .donamodule import mono
 from .donamodule import rakuten_books
 from .donamodule import gei
+from .donamodule import penguin
 
 from collections import namedtuple
 from django.db import connection
@@ -283,6 +284,18 @@ def get_gei(request):
 def dell_all_gei(request):
     Gei.objects.all().delete()
     return HttpResponse('dell_all_gei')
+
+
+def get_penguin(request):
+    print('get_penguin start')
+    print('active_count:' + str(threading.active_count()))
+    print('enumerate:' + str(threading.enumerate()))
+    if 'GetPenguinThread' not in str(threading.enumerate()):
+        print('GetPenguinThread start')
+        t = penguin.GetPenguinThread()
+        t.start()
+    print('get_penguin end')
+    return HttpResponse('penguin')
 
 
 def output_rakuten_books(request):

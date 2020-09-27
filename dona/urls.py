@@ -9,6 +9,7 @@ urlpatterns = [
     path('get_mono', views.get_mono, name='get_mono'),
     path('get_antlion', views.get_antlion, name='get_antlion'),
     path('get_gei', views.get_gei, name='get_gei'),
+    path('get_penguin', views.get_penguin, name='get_penguin'),
     path('dell_all_gei', views.dell_all_gei, name='dell_all_gei'),
     path('output_rakuten_books', views.output_rakuten_books,
          name='output_rakuten_books'),

@@ -35,7 +35,15 @@ class Gei(models.Model):
     url = models.TextField(unique=True)
     price = models.TextField()
     post_date = models.TextField()
-    jan_code = models.TextField()
+    recommended_word = models.TextField()
+
+
+class Penguin(models.Model):
+    name = models.TextField()
+    url = models.TextField(unique=True)
+    post_date = models.TextField()
+    list_price = models.TextField()
+    release_date = models.TextField()
     recommended_word = models.TextField()
 
 
