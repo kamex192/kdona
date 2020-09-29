@@ -16,6 +16,7 @@ urlpatterns = [
     path('output_mono', views.output_mono, name='output_mono'),
     path('output_antlion', views.output_antlion, name='output_antlion'),
     path('output_gei', views.output_gei, name='output_gei'),
+    path('output_penguin', views.output_penguin, name='output_penguin'),
     path('output_gei_antlion', views.output_gei_antlion, name='output_gei_antlion'),
     path('output_item_mono', views.output_item_mono, name='output_item_mono'),
     path('output_item_mono_gei', views.output_item_mono_gei,

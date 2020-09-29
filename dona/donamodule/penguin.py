@@ -28,19 +28,29 @@ class GetPenguinThread(threading.Thread):
         driver = common.init_driver()
 
         # googleでサイト検索
-        site = 'Sidejob-Hack | 副業'
-        common.move_toppage_from_google(driver, site)
+        # site = 'Sidejob-Hack | 副業'
+        # common.move_toppage_from_google(driver, site)
+        driver.get('https://fukugyo-freelife.com/')
+        base_url = driver.current_url
+        print(base_url)
 
         # アイテム検索
         rand_page_list = get_rand_page_list(driver)
 
-        url = driver.current_url
+        print('start roop base base_url')
+        print(base_url)
         for page in rand_page_list:
             print('page:' + str(page))
-            url_page = url + 'page/' + str(page+1)
+            url_page = base_url + 'page/' + str(page+1)
             print(url_page)
-            move_rand_article(driver, url_page)
-            parse_article(driver)
+            print('base url')
+            print(base_url)
+            urls = fetch_article_urls(driver, url_page)
+            for url in urls:
+                print('urls roop')
+                print(url)
+                driver.get(url)
+                parse_article(driver)
 
         print('GetPenguinThread end')
 
@@ -71,29 +81,25 @@ def get_rand_page_list(driver):
     return rand_page_list
 
 
-def move_rand_article(driver, url):
-    print('move_rand_article start')
+def fetch_article_urls(driver, url):
+    print('fetch_article_urls start')
     print(url)
     url_list = []
 
     driver.get(url)
     wait = WebDriverWait(driver, 30)
-    selector = 'a'
+    selector = 'main a'
     elements = wait.until(EC.presence_of_all_elements_located(
         (By.CSS_SELECTOR, selector)))
     for element in elements:
-        if '分析' in element.text:
+        if '】' in element.text:
             print(element.text)
             url = element.get_attribute('href')
             print(url)
             url_list.append(url)
 
-    rand_url = random.sample(url_list, 1)
-
-    print(rand_url)
-    driver.get(*rand_url)
-
-    print('move_rand_article end')
+    print('fetch_article_urls end')
+    return url_list
 
 
 def parse_article(driver):
@@ -137,9 +143,12 @@ def parse_article(driver):
     except Exception as e:
         print(e)
 
-    # penguin.recommended_word = parse_recommended_word(gei.name)
-    # print('recommended_word')
-    # print('gei.recommended_word')
+    selector = 'article'
+    element = wait.until(EC.presence_of_element_located(
+        (By.CSS_SELECTOR, selector)))
+    penguin.recommended_word = parse_recommended_word(element.text)
+    print('recommended_word')
+    print(penguin.recommended_word)
 
     try:
         print(vars(penguin))
@@ -156,7 +165,7 @@ def parse_recommended_word(word):
     print('parse_recommended_word start')
 
     recommended_word = ''
-    if '受注' in word:
+    if '人気' in word:
         recommended_word = '人気'
     if '前作' in word:
         recommended_word = '前作'
@@ -186,6 +195,14 @@ def parse_recommended_word(word):
         recommended_word = '再販'
     if '抽選' in word:
         recommended_word = '抽選'
+    if '受注' in word:
+        recommended_word = '受注'
+    if '様子見' in word:
+        recommended_word = '様子見'
+    if 'おススメ' in word:
+        recommended_word = 'おススメ'
+    if '購入しました' in word:
+        recommended_word = '購入しました'
 
     print('parse_recommended_word end')
     return recommended_word
@@ -194,6 +211,6 @@ def parse_recommended_word(word):
 def output_csv():
     print('output_csv start')
     response = common.output_csv(
-        'Gei', Gei._meta, Gei.objects.all())
+        'Penguin', Penguin._meta, Penguin.objects.all())
     print('output_csv end')
     return response

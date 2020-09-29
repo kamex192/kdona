@@ -326,6 +326,13 @@ def output_gei(request):
     return response
 
 
+def output_penguin(request):
+    print('output_penguin start')
+    response = penguin.output_csv()
+    print('output_penguin end')
+    return response
+
+
 def output_item_mono(request):
     print('output_item_mono start')
     response = HttpResponse(content_type='text/csv; charset=UTF-8')

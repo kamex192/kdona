@@ -18,11 +18,17 @@ import urllib
 def init_driver():
     print('init_driver start')
     options = Options()
+    options.add_argument('--no-sandbox')
+    options.add_argument('--ignore-certificate-errors')
     options.add_argument('--headless')
+    options.add_argument('--disable-dev-shm-usage')
+    options.add_argument('--disable-gpu')
+    options.add_argument('--remote-debugging-port=9222')
     options.add_argument('--disable-blink-features=AutomationControlled')
     options.add_argument(
         f'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/79.0.3945.117 Safari/537.36 Edg/79.0.309.65')
     driver = webdriver.Chrome(options=options)
+    driver.set_window_size(100, 200)
     print('init_driver end')
     return driver
 
